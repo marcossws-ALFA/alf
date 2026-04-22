@@ -278,5 +278,6 @@ export interface PDVOrder {
   paidAmount1?: number;
   paidAmount2?: number;
   date: string;
+  sellerName?: string;
   status: 'Finalizado' | 'Orçamento';
 }

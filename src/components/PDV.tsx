@@ -428,6 +428,13 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
     doc.text('Cliente:', 20, 70);
     doc.setFontSize(10);
     doc.text(order.clientName, 20, 76);
+
+    if (order.sellerName) {
+      doc.setFontSize(12);
+      doc.text('Vendedor:', 140, 70);
+      doc.setFontSize(10);
+      doc.text(order.sellerName, 140, 76);
+    }
     
     // Items Table
     const tableData = order.items.map(item => [
@@ -470,6 +477,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
   const handleWhatsApp = (order: PDVOrder) => {
     const message = `Olá! Segue o resumo do seu pedido #${order.number} na ALFAMAQ MANUTENÇÃO:\n\n` +
       `Data: ${order.date}\n` +
+      (order.sellerName ? `Vendedor: ${order.sellerName}\n` : '') +
       `Total: R$ ${order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
       `Pagamento: ${order.paymentMethod}${order.paymentMethod2 ? ` + ${order.paymentMethod2}` : ''}\n` +
       `Status: ${order.status}\n\n` +
@@ -1235,6 +1243,12 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                       {selectedOrder.status}
                     </span>
                   </div>
+                  {selectedOrder.sellerName && (
+                    <div className="p-4 bg-[#f5f2fb] rounded-2xl">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendedor</p>
+                      <p className="font-bold text-[#1b1b21]">{selectedOrder.sellerName}</p>
+                    </div>
+                  )}
                   <div className="p-4 bg-[#f5f2fb] rounded-2xl">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pagamento</p>
                     <p className="font-bold text-[#1b1b21]">{selectedOrder.paymentMethod}</p>
