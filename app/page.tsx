@@ -17,9 +17,8 @@ import Rentals from '@/src/components/Rentals';
 import PDV from '@/src/components/PDV';
 import { View, Equipment as EquipmentType, Client, ServiceOrder, Part, Service, Transaction, Supplier, FixedExpense, Mechanic, Seller, SystemUser, PDVOrder, Rental, CompanyData } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
-import { dbUtils } from '@/src/lib/db';
-import { cn } from '@/src/lib/utils';
 import { LogIn, QrCode } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 const initialCompanyData: CompanyData = {
   companyName: 'ALFAMAQ MANUTENÇÃO',
@@ -36,164 +35,62 @@ const initialCompanyData: CompanyData = {
 };
 
 export default function Home() {
-  const { user, loading, login, isLoggingIn, loginWithEmail, registerWithEmail, data, actions } = useFirebase();
-  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const { user, loading, isAuthReady, login, logout, data, actions } = useFirebase();
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [isNewOSModalOpen, setIsNewOSModalOpen] = useState(false);
-  const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
-  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [selectedRentalId, setSelectedRentalId] = useState<string | null>(null);
-  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null);
-  const [isOSOverlayOpen, setIsOSOverlayOpen] = useState(false);
-  const [isRentalOverlayOpen, setIsRentalOverlayOpen] = useState(false);
-  const [isSaleOverlayOpen, setIsSaleOverlayOpen] = useState(false);
-
-  // Map Firebase data to state-like variables for compatibility with existing components
-  const clientsList = data.clients || [];
-  const equipmentList = data.equipment || [];
-  const ordersList = data.serviceOrders || [];
-  const partsList = data.parts || [];
-  const servicesList = data.services || [];
-  const suppliersList = data.suppliers || [];
-  const mechanicsList = data.mechanics || [];
-  const sellersList = data.sellers || [];
-  const systemUsersList = data.systemUsers || [];
+  
+  // Ensure we have some company data even if Firestore is empty
   const companyData = data.companyData || initialCompanyData;
-  const pdvOrdersList = data.pdvOrders || [];
-  const rentalsList = data.rentals || [];
-  const fixedExpenses = data.fixedExpenses || [];
-  const transactionsList = data.transactions || [];
 
-  // Wrapper functions for database operations to maintain compatibility with prop setters
-  const setClientsList = (clients: any) => {}; // No-op as onSnapshot handles updates
-  const setOrdersList = (orders: any) => {};
-  const setEquipmentList = (equipment: any) => {};
-  const setPartsList = (parts: any) => {};
-  const setServicesList = (services: any) => {};
-  const setSuppliersList = (suppliers: any) => {};
-  const setMechanicsList = (mechanics: any) => {};
-  const setSellersList = (sellers: any) => {};
-  const setSystemUsersList = (users: any) => {};
-  const setCompanyData = async (newData: CompanyData) => {
-    await actions.set('company', 'settings', newData);
-  };
-  const setPdvOrdersList = (orders: any) => {};
-  const setRentalsList = (rentals: any) => {};
-  const setFixedExpenses = (expenses: any) => {};
-  const setTransactionsList = (transactions: any) => {};
-
-  if (loading) {
+  if (loading || !isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fbf8ff]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#000666]"></div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#000666] border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[#000666] font-bold">Carregando Sistema...</p>
+        </div>
       </div>
     );
   }
 
   if (!user) {
-    const handleEmailAuth = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setAuthError(null);
-      setIsEmailLoading(true);
-      try {
-        if (isRegistering) {
-          await registerWithEmail(email, password);
-        } else {
-          await loginWithEmail(email, password);
-        }
-      } catch (error: any) {
-        setAuthError(error.message || 'Erro na autenticação');
-      } finally {
-        setIsEmailLoading(false);
-      }
-    };
-
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fbf8ff] p-4">
-        <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-2xl shadow-[#000666]/10 p-10 flex flex-col items-center border border-[#c6c5d4]/10">
-          <div className="p-6 bg-[#000666] text-white rounded-[2rem] mb-6 shadow-xl shadow-[#000666]/20">
-            <QrCode size={48} />
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl shadow-[#000666]/10 border border-[#c6c5d4]/20"
+        >
+          <div className="text-center mb-8">
+            <div className="bg-[#000666] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#000666]/20">
+              <QrCode className="text-white" size={32} />
+            </div>
+            <h1 className="text-2xl font-black text-[#000666]">Portal Alfamaq</h1>
+            <p className="text-slate-500 font-medium">Gestão de Serviços e Ativos</p>
           </div>
-          <h1 className="text-2xl font-black text-[#000666] mb-2 tracking-tight">Portal Alfamaq</h1>
-          <p className="text-slate-500 font-medium mb-8 text-center leading-relaxed">
-            {isRegistering ? 'Crie sua conta para começar.' : 'Bem-vindo de volta! Faça login para continuar.'}
-          </p>
 
-          <form onSubmit={handleEmailAuth} className="w-full space-y-4 mb-6">
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-[#f5f2fb] border-none rounded-xl text-sm font-bold text-[#1b1b21] focus:ring-2 focus:ring-[#000666]/10 outline-none"
-                placeholder="seu@email.com"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-[#f5f2fb] border-none rounded-xl text-sm font-bold text-[#1b1b21] focus:ring-2 focus:ring-[#000666]/10 outline-none"
-                placeholder="••••••••"
-              />
-            </div>
-
-            {authError && (
-              <p className="text-xs font-bold text-red-500 text-center">{authError}</p>
-            )}
-
-            <button 
-              type="submit"
-              disabled={isEmailLoading || isLoggingIn}
-              className={cn(
-                "w-full py-4 bg-[#000666] text-white font-black rounded-2xl shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all text-center flex items-center justify-center",
-                (isEmailLoading || isLoggingIn) && "opacity-50 cursor-not-allowed"
-              )}
+          <div className="space-y-4">
+            <button
+              onClick={login}
+              className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all"
             >
-              {isEmailLoading ? 'Processando...' : (isRegistering ? 'Cadastrar' : 'Entrar')}
+              <LogIn size={20} />
+              Acessar com Google
             </button>
-          </form>
-
-          <div className="w-full flex items-center gap-4 mb-6">
-            <div className="h-px flex-1 bg-slate-100"></div>
-            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">ou</span>
-            <div className="h-px flex-1 bg-slate-100"></div>
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-[#c6c5d4]/30"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-slate-400 font-bold tracking-widest">Acesso Restrito</span>
+              </div>
+            </div>
+            <p className="text-center text-xs text-slate-400 font-medium">
+              Utilize sua conta corporativa para acessar o painel administrativo.
+            </p>
           </div>
-
-          <button 
-            onClick={login}
-            disabled={isLoggingIn}
-            className={cn(
-              "w-full py-4 bg-white border border-slate-100 text-[#000666] font-black rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-3",
-              isLoggingIn && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <LogIn size={20} />
-            {isLoggingIn ? 'Iniciando...' : 'Entrar com Google'}
-          </button>
-
-          <button 
-            onClick={() => setIsRegistering(!isRegistering)}
-            className="mt-6 text-xs font-bold text-slate-400 hover:text-[#000666] transition-colors"
-          >
-            {isRegistering ? 'Já tem uma conta? Faça login' : 'Não tem uma conta? Cadastre-se'}
-          </button>
-
-          <p className="mt-8 text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-            © 2026 Alfamaq Manutenção
-          </p>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -201,264 +98,163 @@ export default function Home() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard orders={ordersList} transactions={transactionsList} pdvOrders={pdvOrdersList} />;
+        return <Dashboard orders={data.serviceOrders} transactions={data.transactions} pdvOrders={data.pdvOrders} />;
       case 'pdv':
         return (
           <PDV 
-            parts={partsList} 
-            services={servicesList} 
-            clients={clientsList}
-            setClients={setClientsList as any}
-            setParts={setPartsList as any}
-            setTransactions={setTransactionsList as any}
-            pdvOrders={pdvOrdersList}
-            setPdvOrders={setPdvOrdersList as any}
-            sellers={sellersList}
-            initialOrderId={selectedSaleId}
-            onModalClose={() => setSelectedSaleId(null)}
+            parts={data.parts} 
+            services={data.services} 
+            clients={data.clients} 
+            setClients={actions.setClients}
+            setParts={actions.setParts}
+            setTransactions={actions.setTransactions}
+            pdvOrders={data.pdvOrders}
+            setPdvOrders={actions.setPdvOrders}
+            sellers={data.sellers}
           />
         );
       case 'service-orders':
         return (
           <ServiceOrders 
-            orders={ordersList} 
-            setOrders={setOrdersList as any} 
-            clients={clientsList} 
-            setClients={setClientsList as any}
-            equipment={equipmentList} 
-            setEquipment={setEquipmentList as any}
-            partsList={partsList}
-            servicesList={servicesList}
-            transactions={transactionsList}
-            setTransactions={setTransactionsList as any}
-            mechanics={mechanicsList}
-            sellers={sellersList}
-            triggerNewModal={isNewOSModalOpen}
-            initialOrderId={selectedOrderId}
-            onClose={() => {
-              setIsNewOSModalOpen(false);
-              setSelectedOrderId(null);
-            }}
+            orders={data.serviceOrders} 
+            setOrders={actions.setServiceOrders}
+            clients={data.clients}
+            setClients={actions.setClients}
+            equipment={data.equipment}
+            setEquipment={actions.setEquipment}
+            partsList={data.parts}
+            servicesList={data.services}
+            transactions={data.transactions}
+            setTransactions={actions.setTransactions}
+            mechanics={data.mechanics}
+            sellers={data.sellers}
           />
         );
       case 'clients':
         return (
           <Clients 
-            equipmentList={equipmentList} 
-            clients={clientsList} 
-            setClients={setClientsList as any} 
-            orders={ordersList} 
-            onOpenOS={(osId) => {
-              setSelectedOrderId(osId);
-              setIsOSOverlayOpen(true);
+            clients={data.clients} 
+            setClients={actions.setClients} 
+            equipmentList={data.equipment} 
+            orders={data.serviceOrders}
+            onOpenOS={(id) => {
+              // Implementation if needed
             }}
-          />
-        );
-      case 'suppliers':
-        return (
-          <Suppliers 
-            suppliers={suppliersList} 
-            setSuppliers={setSuppliersList as any} 
-            transactions={transactionsList}
           />
         );
       case 'equipment':
         return (
           <Equipment 
-            equipmentList={equipmentList} 
-            setEquipmentList={setEquipmentList as any} 
-            clients={clientsList} 
-            orders={ordersList} 
-            onOpenOS={(osId) => {
-              setSelectedOrderId(osId);
-              setIsOSOverlayOpen(true);
-            }}
-          />
-        );
-      case 'rentals':
-        return (
-          <Rentals 
-            clients={clientsList} 
-            setClients={setClientsList as any} 
-            equipment={equipmentList.filter(e => e.isForRental)} 
-            setEquipment={setEquipmentList as any}
-            rentals={rentalsList}
-            setRentals={setRentalsList as any}
-            setTransactions={setTransactionsList as any}
-            initialRentalId={selectedRentalId}
-            triggerNewModal={isNewRentalModalOpen}
-            onModalClose={() => {
-              setSelectedRentalId(null);
-              setIsNewRentalModalOpen(false);
-            }}
+            equipmentList={data.equipment} 
+            setEquipmentList={actions.setEquipment} 
+            clients={data.clients} 
+            orders={data.serviceOrders}
           />
         );
       case 'parts':
         return (
           <Parts 
-            parts={partsList} 
-            setParts={setPartsList as any} 
-            transactions={transactionsList}
-            setTransactions={setTransactionsList as any}
-            suppliers={suppliersList}
-            setSuppliers={setSuppliersList as any}
+            parts={data.parts} 
+            setParts={actions.setParts} 
+            transactions={data.transactions}
+            setTransactions={actions.setTransactions}
+            suppliers={data.suppliers} 
+            setSuppliers={actions.setSuppliers}
           />
         );
       case 'services':
-        return <Services services={servicesList} setServices={setServicesList as any} />;
+        return <Services services={data.services} setServices={actions.setServices} />;
       case 'finance':
         return (
           <Finance 
-            transactions={transactionsList} 
-            setTransactions={setTransactionsList as any} 
-            suppliers={suppliersList}
-            clients={clientsList}
-            onViewChange={setCurrentView} 
+            transactions={data.transactions} 
+            setTransactions={actions.setTransactions}
+            suppliers={data.suppliers}
+            clients={data.clients}
+            onViewChange={(view) => setCurrentView(view)}
           />
         );
       case 'receivables':
         return (
           <Receivables 
-            transactions={transactionsList} 
-            setTransactions={setTransactionsList as any} 
-            clients={clientsList}
-            setClients={setClientsList as any}
-            onBack={() => setCurrentView('finance')} 
-            onOpenOS={(osId) => {
-              setSelectedOrderId(osId);
-              setIsOSOverlayOpen(true);
-            }}
-            onOpenRental={(rentalId) => {
-              setSelectedRentalId(rentalId);
-              setIsRentalOverlayOpen(true);
-            }}
-            onOpenSale={(saleId) => {
-              setSelectedSaleId(saleId);
-              setIsSaleOverlayOpen(true);
-            }}
+            transactions={data.transactions} 
+            setTransactions={actions.setTransactions} 
+            clients={data.clients}
+            setClients={actions.setClients}
+            onBack={() => setCurrentView('finance')}
+            onOpenOS={(id) => setCurrentView('service-orders')}
+            onOpenRental={(id) => setCurrentView('rentals')}
+            onOpenSale={(id) => setCurrentView('pdv')}
           />
         );
       case 'payables':
         return (
           <Payables 
-            transactions={transactionsList} 
-            setTransactions={setTransactionsList as any} 
-            suppliers={suppliersList}
-            setSuppliers={setSuppliersList as any}
-            fixedExpenses={fixedExpenses}
-            setFixedExpenses={setFixedExpenses as any}
-            orders={ordersList}
-            mechanics={mechanicsList}
-            sellers={sellersList}
-            onBack={() => setCurrentView('finance')} 
-            onOpenOS={(osId) => {
-              setSelectedOrderId(osId);
-              setIsOSOverlayOpen(true);
-            }}
+            transactions={data.transactions} 
+            setTransactions={actions.setTransactions} 
+            suppliers={data.suppliers}
+            setSuppliers={actions.setSuppliers}
+            fixedExpenses={data.fixedExpenses}
+            setFixedExpenses={actions.setFixedExpenses}
+            orders={data.serviceOrders}
+            mechanics={data.mechanics}
+            sellers={data.sellers}
+            onBack={() => setCurrentView('finance')}
+          />
+        );
+      case 'suppliers':
+        return <Suppliers suppliers={data.suppliers} setSuppliers={actions.setSuppliers} transactions={data.transactions} />;
+      case 'rentals':
+        return (
+          <Rentals 
+            rentals={data.rentals} 
+            setRentals={actions.setRentals}
+            equipment={data.equipment} 
+            setEquipment={actions.setEquipment}
+            clients={data.clients}
+            setClients={actions.setClients}
+            setTransactions={actions.setTransactions}
           />
         );
       case 'settings':
         return (
           <Settings 
-            mechanics={mechanicsList}
-            setMechanics={setMechanicsList as any}
-            sellers={sellersList}
-            setSellers={setSellersList as any}
-            systemUsers={systemUsersList}
-            setSystemUsers={setSystemUsersList as any}
-            companyData={companyData}
-            setCompanyData={setCompanyData}
+            companyData={companyData} 
+            setCompanyData={(data) => actions.setCompanyData(data as CompanyData)}
+            mechanics={data.mechanics} 
+            setMechanics={actions.setMechanics}
+            sellers={data.sellers} 
+            setSellers={actions.setSellers}
+            systemUsers={data.systemUsers}
+            setSystemUsers={actions.setSystemUsers}
           />
         );
-      case 'support':
-        return (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 py-20">
-            <h2 className="text-2xl font-bold mb-2">Suporte</h2>
-            <p>Precisa de ajuda? Entre em contato com nossa equipe técnica.</p>
-          </div>
-        );
       default:
-        return <Dashboard orders={ordersList} transactions={transactionsList} pdvOrders={pdvOrdersList} />;
+        return <Dashboard orders={data.serviceOrders} transactions={data.transactions} pdvOrders={data.pdvOrders} />;
     }
   };
 
-  const handleNewOS = () => {
-    setCurrentView('service-orders');
-    setIsNewOSModalOpen(true);
-  };
-
-  const handleNewRental = () => {
-    setCurrentView('rentals');
-    setIsNewRentalModalOpen(true);
-  };
-
-  const handleNewSale = () => {
-    setCurrentView('pdv');
-  };
-
   return (
-    <Layout currentView={currentView} onViewChange={setCurrentView} onNewOS={handleNewOS} onNewRental={handleNewRental} onNewSale={handleNewSale} companyData={companyData}>
-      {renderView()}
-      
-      {isOSOverlayOpen && (
-        <ServiceOrders 
-          orders={ordersList} 
-          setOrders={setOrdersList as any} 
-          clients={clientsList} 
-          setClients={setClientsList as any}
-          equipment={equipmentList} 
-          setEquipment={setEquipmentList as any}
-          partsList={partsList}
-          servicesList={servicesList}
-          transactions={transactionsList}
-          setTransactions={setTransactionsList as any}
-          mechanics={mechanicsList}
-          sellers={sellersList}
-          initialOrderId={selectedOrderId}
-          hideList={true}
-          onClose={() => {
-            setIsOSOverlayOpen(false);
-            setSelectedOrderId(null);
-          }}
-        />
-      )}
-
-      {isRentalOverlayOpen && (
-        <Rentals 
-          clients={clientsList} 
-          setClients={setClientsList as any} 
-          equipment={equipmentList.filter(e => e.isForRental)} 
-          setEquipment={setEquipmentList as any}
-          rentals={rentalsList}
-          setRentals={setRentalsList as any}
-          setTransactions={setTransactionsList as any}
-          initialRentalId={selectedRentalId}
-          hideList={true}
-          onModalClose={() => {
-            setIsRentalOverlayOpen(false);
-            setSelectedRentalId(null);
-          }}
-        />
-      )}
-
-      {isSaleOverlayOpen && (
-        <PDV 
-          parts={partsList} 
-          services={servicesList} 
-          clients={clientsList}
-          setClients={setClientsList as any}
-          setParts={setPartsList as any}
-          setTransactions={setTransactionsList as any}
-          pdvOrders={pdvOrdersList}
-          setPdvOrders={setPdvOrdersList as any}
-          sellers={sellersList}
-          initialOrderId={selectedSaleId}
-          onModalClose={() => {
-            setIsSaleOverlayOpen(false);
-            setSelectedSaleId(null);
-          }}
-        />
-      )}
+    <Layout 
+      currentView={currentView} 
+      onViewChange={setCurrentView}
+      onNewOS={() => setCurrentView('service-orders')}
+      onNewRental={() => setCurrentView('rentals')}
+      onNewSale={() => setCurrentView('pdv')}
+      companyData={companyData}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentView}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2 }}
+          className="h-full"
+        >
+          {renderView()}
+        </motion.div>
+      </AnimatePresence>
     </Layout>
   );
 }

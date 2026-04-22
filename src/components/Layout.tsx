@@ -58,13 +58,10 @@ export default function Layout({
     { id: 'parts', label: 'Peças / Estoque', icon: Package },
     { id: 'services', label: 'Serviços', icon: Wrench },
     { id: 'finance', label: 'Financeiro', icon: TrendingUp },
-    { id: 'receivables', label: 'Contas a Receber', icon: TrendingUp, secondary: true },
-    { id: 'payables', label: 'Contas a Pagar', icon: TrendingDown, secondary: true },
     { id: 'settings', label: 'Configurações', icon: SettingsIcon },
   ];
 
-  const mainMenuItems = menuItems.filter(item => !item.secondary);
-  const financeMenuItems = menuItems.filter(item => item.secondary);
+  const mainMenuItems = menuItems;
 
   return (
     <div className="flex h-screen bg-[#fbf8ff]">
@@ -92,62 +89,9 @@ export default function Layout({
           )}
         </div>
 
-        {/* Action Buttons */}
-        {!isSidebarCollapsed && (
-          <div className="px-4 mb-6 space-y-2">
-            <button 
-              onClick={onNewOS}
-              className="w-full py-3 bg-[#000666] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-            >
-              <Plus size={18} />
-              Nova OS
-            </button>
-            <div className="grid grid-cols-2 gap-2">
-              <button 
-                onClick={onNewSale}
-                className="py-2.5 bg-white border border-[#000666]/10 text-[#000666] rounded-xl font-bold text-xs hover:bg-[#000666]/5 transition-all"
-              >
-                Venda
-              </button>
-              <button 
-                onClick={onNewRental}
-                className="py-2.5 bg-white border border-[#000666]/10 text-[#000666] rounded-xl font-bold text-xs hover:bg-[#000666]/5 transition-all"
-              >
-                Locação
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-4 py-2 space-y-1 custom-scrollbar">
           {mainMenuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onViewChange(item.id as View)}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200",
-                currentView === item.id 
-                  ? "bg-[#000666] text-white shadow-lg shadow-[#000666]/10" 
-                  : "text-slate-500 hover:bg-[#f5f2fb] hover:text-[#000666]"
-              )}
-            >
-              <item.icon size={20} className={currentView === item.id ? "text-white" : ""} />
-              {!isSidebarCollapsed && (
-                <span className={cn("text-sm font-bold truncate", currentView === item.id ? "font-black" : "font-semibold")}>
-                  {item.label}
-                </span>
-              )}
-            </button>
-          ))}
-
-          {!isSidebarCollapsed && (
-            <div className="mt-8 mb-2 px-3">
-              <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Financeiro</span>
-            </div>
-          )}
-
-          {financeMenuItems.map((item) => (
             <button
               key={item.id}
               onClick={() => onViewChange(item.id as View)}
@@ -211,6 +155,31 @@ export default function Layout({
               <span className="text-[8px] opacity-30">•</span>
               <span className="text-[10px] font-bold uppercase tracking-widest">{currentView}</span>
             </div>
+          </div>
+
+          {/* Header Actions */}
+          <div className="hidden lg:flex items-center gap-3">
+            <button 
+              onClick={onNewOS}
+              className="px-4 py-2.5 bg-[#000666] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#000666]/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Nova OS
+            </button>
+            <button 
+              onClick={onNewSale}
+              className="px-4 py-2.5 bg-white border border-[#000666]/10 text-[#000666] rounded-xl font-bold text-sm hover:bg-[#f5f2fb] transition-all flex items-center gap-2"
+            >
+              <ShoppingCart size={18} />
+              Venda
+            </button>
+            <button 
+              onClick={onNewRental}
+              className="px-4 py-2.5 bg-white border border-[#000666]/10 text-[#000666] rounded-xl font-bold text-sm hover:bg-[#f5f2fb] transition-all flex items-center gap-2"
+            >
+              <CalendarDays size={18} />
+              Locação
+            </button>
           </div>
 
           <div className="flex items-center gap-4">
