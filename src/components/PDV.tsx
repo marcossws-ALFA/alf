@@ -77,6 +77,13 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
   const [isPostSaleModalOpen, setIsPostSaleModalOpen] = useState(false);
   const [lastCreatedOrder, setLastCreatedOrder] = useState<PDVOrder | null>(null);
+  const [customNumber, setCustomNumber] = useState('');
+
+  useEffect(() => {
+    // Sugerir o próximo número sequencial por padrão
+    const nextNumber = (pdvOrders.length + 1).toString().padStart(4, '0');
+    setCustomNumber(nextNumber);
+  }, [pdvOrders.length]);
 
   useEffect(() => {
     if (initialOrderId) {
@@ -316,7 +323,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
     }
     setSellerError(false);
 
-    const orderNumber = (pdvOrders.length + 1).toString().padStart(4, '0');
+    const orderNumber = customNumber || (pdvOrders.length + 1).toString().padStart(4, '0');
     const seller = sellers.find(s => s.id === selectedSellerId);
     
     const amount1 = parseFloat(paidAmount1.replace(/[^\d,]/g, '').replace(',', '.') || subtotal.toString());
@@ -841,6 +848,18 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
               </div>
 
               <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                <div className="space-y-3">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest text-[#000666]/50">Número do Pedido (Automático)</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={customNumber}
+                      readOnly
+                      className="w-full px-4 py-3 bg-[#f5f2fb] border-none rounded-xl text-sm font-black text-[#000666] opacity-70 cursor-not-allowed outline-none"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente (Opcional)</label>
