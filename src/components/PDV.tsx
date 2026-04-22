@@ -374,17 +374,17 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
       // Save PDV Order
       const orderData: any = {
         number: orderNumber,
-        clientId: selectedClient?.id,
+        clientId: selectedClient?.id || null,
         clientName: selectedClient?.name || 'Cliente Consumidor',
         items: cart.map(item => ({ ...item })),
         total: subtotal,
         paymentMethod: Number(installments) > 1 ? `${paymentMethod} (${installments}x)` : paymentMethod,
-        installments,
-        paymentMethod2: paymentMethod2 !== 'Nenhum' ? (Number(installments2) > 1 ? `${paymentMethod2} (${installments2}x)` : paymentMethod2) : undefined,
-        installments2: paymentMethod2 !== 'Nenhum' ? installments2 : undefined,
+        installments: installments,
+        paymentMethod2: paymentMethod2 !== 'Nenhum' ? (Number(installments2) > 1 ? `${paymentMethod2} (${installments2}x)` : paymentMethod2) : null,
+        installments2: paymentMethod2 !== 'Nenhum' ? installments2 : null,
         paidAmount1: amount1,
-        paidAmount2: paymentMethod2 !== 'Nenhum' ? amount2 : undefined,
-        sellerName: seller?.name,
+        paidAmount2: paymentMethod2 !== 'Nenhum' ? amount2 : null,
+        sellerName: seller?.name || null,
         date: new Date().toLocaleDateString('pt-BR'),
         status
       };
