@@ -44,6 +44,7 @@ interface FirebaseContextType {
   user: User | null;
   loading: boolean;
   isAuthReady: boolean;
+  isLoggingIn: boolean;
   login: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   registerWithEmail: (email: string, pass: string) => Promise<void>;
@@ -78,6 +79,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -172,8 +174,23 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   const login = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      if (error.code === 'auth/cancelled-popup-request') {
+        console.warn('Login popup was cancelled or a previous request was still pending.');
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        console.log('User closed the login popup.');
+      } else {
+        console.error('Login error:', error);
+        throw error;
+      }
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
   const loginWithEmail = async (email: string, pass: string) => {
@@ -235,6 +252,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       user, 
       loading, 
       isAuthReady, 
+      isLoggingIn,
       login, 
       loginWithEmail,
       registerWithEmail,

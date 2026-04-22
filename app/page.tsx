@@ -18,6 +18,7 @@ import PDV from '@/src/components/PDV';
 import { View, Equipment as EquipmentType, Client, ServiceOrder, Part, Service, Transaction, Supplier, FixedExpense, Mechanic, Seller, SystemUser, PDVOrder, Rental, CompanyData } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
 import { dbUtils } from '@/src/lib/db';
+import { cn } from '@/src/lib/utils';
 import { LogIn, QrCode } from 'lucide-react';
 
 const initialCompanyData: CompanyData = {
@@ -35,7 +36,8 @@ const initialCompanyData: CompanyData = {
 };
 
 export default function Home() {
-  const { user, loading, login, loginWithEmail, registerWithEmail, data } = useFirebase();
+  const { user, loading, login, isLoggingIn, loginWithEmail, registerWithEmail, data, actions } = useFirebase();
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [isNewOSModalOpen, setIsNewOSModalOpen] = useState(false);
   const [isNewRentalModalOpen, setIsNewRentalModalOpen] = useState(false);
@@ -53,42 +55,38 @@ export default function Home() {
   const [isSaleOverlayOpen, setIsSaleOverlayOpen] = useState(false);
 
   // Map Firebase data to state-like variables for compatibility with existing components
-  const clientsList = data.clients;
-  const equipmentList = data.equipment;
-  const ordersList = data.serviceOrders;
-  const partsList = data.parts;
-  const servicesList = data.services;
-  const suppliersList = data.suppliers;
-  const mechanicsList = data.mechanics;
-  const sellersList = data.sellers;
-  const systemUsersList = data.systemUsers;
+  const clientsList = data.clients || [];
+  const equipmentList = data.equipment || [];
+  const ordersList = data.serviceOrders || [];
+  const partsList = data.parts || [];
+  const servicesList = data.services || [];
+  const suppliersList = data.suppliers || [];
+  const mechanicsList = data.mechanics || [];
+  const sellersList = data.sellers || [];
+  const systemUsersList = data.systemUsers || [];
   const companyData = data.companyData || initialCompanyData;
-  const pdvOrdersList = data.pdvOrders;
-  const rentalsList = data.rentals;
-  const fixedExpenses = data.fixedExpenses;
-  const transactionsList = data.transactions;
+  const pdvOrdersList = data.pdvOrders || [];
+  const rentalsList = data.rentals || [];
+  const fixedExpenses = data.fixedExpenses || [];
+  const transactionsList = data.transactions || [];
 
-  // Wrapper functions for database operations
-  const setClientsList = async (clients: Client[] | ((prev: Client[]) => Client[])) => {
-    // This is a simplified version. In a real app, you'd handle individual updates.
-    // For now, we'll assume the components call these with the new list.
+  // Wrapper functions for database operations to maintain compatibility with prop setters
+  const setClientsList = (clients: any) => {}; // No-op as onSnapshot handles updates
+  const setOrdersList = (orders: any) => {};
+  const setEquipmentList = (equipment: any) => {};
+  const setPartsList = (parts: any) => {};
+  const setServicesList = (services: any) => {};
+  const setSuppliersList = (suppliers: any) => {};
+  const setMechanicsList = (mechanics: any) => {};
+  const setSellersList = (sellers: any) => {};
+  const setSystemUsersList = (users: any) => {};
+  const setCompanyData = async (newData: CompanyData) => {
+    await actions.set('company', 'settings', newData);
   };
-
-  const setOrdersList = async (orders: ServiceOrder[]) => {};
-  const setEquipmentList = async (equipment: EquipmentType[]) => {};
-  const setPartsList = async (parts: Part[]) => {};
-  const setServicesList = async (services: Service[]) => {};
-  const setSuppliersList = async (suppliers: Supplier[]) => {};
-  const setMechanicsList = async (mechanics: Mechanic[]) => {};
-  const setSellersList = async (sellers: Seller[]) => {};
-  const setSystemUsersList = async (users: SystemUser[]) => {};
-  const setCompanyData = async (data: CompanyData) => {
-    await dbUtils.set('company', 'settings', data);
-  };
-  const setPdvOrdersList = async (orders: PDVOrder[]) => {};
-  const setRentalsList = async (rentals: Rental[]) => {};
-  const setFixedExpenses = async (expenses: FixedExpense[]) => {};
-  const setTransactionsList = async (transactions: Transaction[]) => {};
+  const setPdvOrdersList = (orders: any) => {};
+  const setRentalsList = (rentals: any) => {};
+  const setFixedExpenses = (expenses: any) => {};
+  const setTransactionsList = (transactions: any) => {};
 
   if (loading) {
     return (
@@ -102,6 +100,7 @@ export default function Home() {
     const handleEmailAuth = async (e: React.FormEvent) => {
       e.preventDefault();
       setAuthError(null);
+      setIsEmailLoading(true);
       try {
         if (isRegistering) {
           await registerWithEmail(email, password);
@@ -110,6 +109,8 @@ export default function Home() {
         }
       } catch (error: any) {
         setAuthError(error.message || 'Erro na autenticação');
+      } finally {
+        setIsEmailLoading(false);
       }
     };
 
@@ -154,9 +155,13 @@ export default function Home() {
 
             <button 
               type="submit"
-              className="w-full py-4 bg-[#000666] text-white font-black rounded-2xl shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all"
+              disabled={isEmailLoading || isLoggingIn}
+              className={cn(
+                "w-full py-4 bg-[#000666] text-white font-black rounded-2xl shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all text-center flex items-center justify-center",
+                (isEmailLoading || isLoggingIn) && "opacity-50 cursor-not-allowed"
+              )}
             >
-              {isRegistering ? 'Cadastrar' : 'Entrar'}
+              {isEmailLoading ? 'Processando...' : (isRegistering ? 'Cadastrar' : 'Entrar')}
             </button>
           </form>
 
@@ -168,10 +173,14 @@ export default function Home() {
 
           <button 
             onClick={login}
-            className="w-full py-4 bg-white border border-slate-100 text-[#000666] font-black rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-3"
+            disabled={isLoggingIn}
+            className={cn(
+              "w-full py-4 bg-white border border-slate-100 text-[#000666] font-black rounded-2xl shadow-sm hover:bg-slate-50 active:scale-95 transition-all flex items-center justify-center gap-3",
+              isLoggingIn && "opacity-50 cursor-not-allowed"
+            )}
           >
             <LogIn size={20} />
-            Entrar com Google
+            {isLoggingIn ? 'Iniciando...' : 'Entrar com Google'}
           </button>
 
           <button 
@@ -199,11 +208,11 @@ export default function Home() {
             parts={partsList} 
             services={servicesList} 
             clients={clientsList}
-            setClients={setClientsList}
-            setParts={setPartsList}
-            setTransactions={setTransactionsList}
+            setClients={setClientsList as any}
+            setParts={setPartsList as any}
+            setTransactions={setTransactionsList as any}
             pdvOrders={pdvOrdersList}
-            setPdvOrders={setPdvOrdersList}
+            setPdvOrders={setPdvOrdersList as any}
             sellers={sellersList}
             initialOrderId={selectedSaleId}
             onModalClose={() => setSelectedSaleId(null)}
@@ -213,15 +222,15 @@ export default function Home() {
         return (
           <ServiceOrders 
             orders={ordersList} 
-            setOrders={setOrdersList} 
+            setOrders={setOrdersList as any} 
             clients={clientsList} 
-            setClients={setClientsList}
+            setClients={setClientsList as any}
             equipment={equipmentList} 
-            setEquipment={setEquipmentList}
+            setEquipment={setEquipmentList as any}
             partsList={partsList}
             servicesList={servicesList}
             transactions={transactionsList}
-            setTransactions={setTransactionsList}
+            setTransactions={setTransactionsList as any}
             mechanics={mechanicsList}
             sellers={sellersList}
             triggerNewModal={isNewOSModalOpen}
@@ -237,7 +246,7 @@ export default function Home() {
           <Clients 
             equipmentList={equipmentList} 
             clients={clientsList} 
-            setClients={setClientsList} 
+            setClients={setClientsList as any} 
             orders={ordersList} 
             onOpenOS={(osId) => {
               setSelectedOrderId(osId);
@@ -249,7 +258,7 @@ export default function Home() {
         return (
           <Suppliers 
             suppliers={suppliersList} 
-            setSuppliers={setSuppliersList} 
+            setSuppliers={setSuppliersList as any} 
             transactions={transactionsList}
           />
         );
@@ -257,7 +266,7 @@ export default function Home() {
         return (
           <Equipment 
             equipmentList={equipmentList} 
-            setEquipmentList={setEquipmentList} 
+            setEquipmentList={setEquipmentList as any} 
             clients={clientsList} 
             orders={ordersList} 
             onOpenOS={(osId) => {
@@ -270,12 +279,12 @@ export default function Home() {
         return (
           <Rentals 
             clients={clientsList} 
-            setClients={setClientsList} 
+            setClients={setClientsList as any} 
             equipment={equipmentList.filter(e => e.isForRental)} 
-            setEquipment={setEquipmentList}
+            setEquipment={setEquipmentList as any}
             rentals={rentalsList}
-            setRentals={setRentalsList}
-            setTransactions={setTransactionsList}
+            setRentals={setRentalsList as any}
+            setTransactions={setTransactionsList as any}
             initialRentalId={selectedRentalId}
             triggerNewModal={isNewRentalModalOpen}
             onModalClose={() => {
@@ -288,20 +297,20 @@ export default function Home() {
         return (
           <Parts 
             parts={partsList} 
-            setParts={setPartsList} 
+            setParts={setPartsList as any} 
             transactions={transactionsList}
-            setTransactions={setTransactionsList}
+            setTransactions={setTransactionsList as any}
             suppliers={suppliersList}
-            setSuppliers={setSuppliersList}
+            setSuppliers={setSuppliersList as any}
           />
         );
       case 'services':
-        return <Services services={servicesList} setServices={setServicesList} />;
+        return <Services services={servicesList} setServices={setServicesList as any} />;
       case 'finance':
         return (
           <Finance 
             transactions={transactionsList} 
-            setTransactions={setTransactionsList} 
+            setTransactions={setTransactionsList as any} 
             suppliers={suppliersList}
             clients={clientsList}
             onViewChange={setCurrentView} 
@@ -311,9 +320,9 @@ export default function Home() {
         return (
           <Receivables 
             transactions={transactionsList} 
-            setTransactions={setTransactionsList} 
+            setTransactions={setTransactionsList as any} 
             clients={clientsList}
-            setClients={setClientsList}
+            setClients={setClientsList as any}
             onBack={() => setCurrentView('finance')} 
             onOpenOS={(osId) => {
               setSelectedOrderId(osId);
@@ -333,11 +342,11 @@ export default function Home() {
         return (
           <Payables 
             transactions={transactionsList} 
-            setTransactions={setTransactionsList} 
+            setTransactions={setTransactionsList as any} 
             suppliers={suppliersList}
-            setSuppliers={setSuppliersList}
+            setSuppliers={setSuppliersList as any}
             fixedExpenses={fixedExpenses}
-            setFixedExpenses={setFixedExpenses}
+            setFixedExpenses={setFixedExpenses as any}
             orders={ordersList}
             mechanics={mechanicsList}
             sellers={sellersList}
@@ -352,11 +361,11 @@ export default function Home() {
         return (
           <Settings 
             mechanics={mechanicsList}
-            setMechanics={setMechanicsList}
+            setMechanics={setMechanicsList as any}
             sellers={sellersList}
-            setSellers={setSellersList}
+            setSellers={setSellersList as any}
             systemUsers={systemUsersList}
-            setSystemUsers={setSystemUsersList}
+            setSystemUsers={setSystemUsersList as any}
             companyData={companyData}
             setCompanyData={setCompanyData}
           />
@@ -394,15 +403,15 @@ export default function Home() {
       {isOSOverlayOpen && (
         <ServiceOrders 
           orders={ordersList} 
-          setOrders={setOrdersList} 
+          setOrders={setOrdersList as any} 
           clients={clientsList} 
-          setClients={setClientsList}
+          setClients={setClientsList as any}
           equipment={equipmentList} 
-          setEquipment={setEquipmentList}
+          setEquipment={setEquipmentList as any}
           partsList={partsList}
           servicesList={servicesList}
           transactions={transactionsList}
-          setTransactions={setTransactionsList}
+          setTransactions={setTransactionsList as any}
           mechanics={mechanicsList}
           sellers={sellersList}
           initialOrderId={selectedOrderId}
@@ -417,12 +426,12 @@ export default function Home() {
       {isRentalOverlayOpen && (
         <Rentals 
           clients={clientsList} 
-          setClients={setClientsList} 
+          setClients={setClientsList as any} 
           equipment={equipmentList.filter(e => e.isForRental)} 
-          setEquipment={setEquipmentList}
+          setEquipment={setEquipmentList as any}
           rentals={rentalsList}
-          setRentals={setRentalsList}
-          setTransactions={setTransactionsList}
+          setRentals={setRentalsList as any}
+          setTransactions={setTransactionsList as any}
           initialRentalId={selectedRentalId}
           hideList={true}
           onModalClose={() => {
@@ -437,11 +446,11 @@ export default function Home() {
           parts={partsList} 
           services={servicesList} 
           clients={clientsList}
-          setClients={setClientsList}
-          setParts={setPartsList}
-          setTransactions={setTransactionsList}
+          setClients={setClientsList as any}
+          setParts={setPartsList as any}
+          setTransactions={setTransactionsList as any}
           pdvOrders={pdvOrdersList}
-          setPdvOrders={setPdvOrdersList}
+          setPdvOrders={setPdvOrdersList as any}
           sellers={sellersList}
           initialOrderId={selectedSaleId}
           onModalClose={() => {
