@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: company
+    // Document ID: auto-generated or fixed
+    // Fields: companyName, tradeName, document, email, phone, etc.
+    //
+    // Collection: clients
+    // Fields: name, email, phone, mobile, osCount, status, createdAt, etc.
+    //
+    // Collection: equipment
+    // Fields: type, brand, model, serialNumber, owner, status, etc.
+    //
+    // Collection: service_orders
+    // Fields: number, clientId, clientName, equipmentId, status, createdAt, etc.
+    //
+    // Collection: parts
+    // Fields: name, code, category, stock, price, etc.
+    //
+    // Collection: services
+    // Fields: name, code, category, price, etc.
+    //
+    // Collection: suppliers
+    // Fields: name, email, phone, document, status, etc.
+    //
+    // Collection: transactions
+    // Fields: description, category, type, entity, date, status, value, etc.
+    //
+    // Collection: fixed_expenses
+    // Fields: description, value, dueDay, etc.
+    //
+    // Collection: mechanics
+    // Fields: name, specialty, status, commission, etc.
+    //
+    // Collection: sellers
+    // Fields: name, status, commission, etc.
+    //
+    // Collection: users
+    // Fields: name, email, role, status, etc.
+    //
+    // Collection: pdv_orders
+    // Fields: number, clientId, total, date, status, etc.
+    //
+    // Collection: rentals
+    // Fields: equipmentId, clientId, startDate, endDate, status, totalValue, etc.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' || 
+         request.auth.token.email == "alfamaqmanutencao@gmail.com");
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /{collection}/{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);
+    }
+  }
+}

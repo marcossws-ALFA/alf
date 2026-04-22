@@ -1,0 +1,278 @@
+{
+  "entities": {
+    "CompanyData": {
+      "title": "Company Data",
+      "description": "Information about the company using the CRM",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "tradeName": { "type": "string" },
+        "document": { "type": "string", "description": "CNPJ" },
+        "stateRegistration": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "street": { "type": "string" },
+        "number": { "type": "string" },
+        "neighborhood": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "logoUrl": { "type": "string" }
+      },
+      "required": ["companyName", "document", "email"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Customer information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "mobile": { "type": "string" },
+        "osCount": { "type": "number" },
+        "status": { "type": "string", "enum": ["Ativo", "Inativo", "Bloqueado"] },
+        "createdAt": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "street": { "type": "string" },
+        "number": { "type": "string" },
+        "neighborhood": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "type": { "type": "string", "enum": ["PF", "PJ"] },
+        "document": { "type": "string" },
+        "stateRegistration": { "type": "string" },
+        "tradeName": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["name", "status", "type", "document"]
+    },
+    "Equipment": {
+      "title": "Equipment",
+      "description": "Equipment registered in the system",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "brand": { "type": "string" },
+        "model": { "type": "string" },
+        "serialNumber": { "type": "string" },
+        "owner": { "type": "string" },
+        "ownerLogo": { "type": "string" },
+        "status": { "type": "string", "enum": ["Equipamento Ativo", "Em manutenção", "Equipamento Desativado"] },
+        "isForRental": { "type": "boolean" },
+        "dailyRate": { "type": "number" }
+      },
+      "required": ["type", "brand", "model", "owner", "status"]
+    },
+    "ServiceOrder": {
+      "title": "Service Order",
+      "description": "Service order details",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientDocument": { "type": "string" },
+        "clientPhone": { "type": "string" },
+        "equipmentId": { "type": "string" },
+        "equipmentName": { "type": "string" },
+        "defectDescription": { "type": "string" },
+        "technicalReport": { "type": "string" },
+        "accessories": { "type": "string" },
+        "status": { "type": "string", "enum": ["AGUARDANDO APROVAÇÃO", "CONCLUIDO", "EM ORÇAMENTO", "NÃO APROVADO"] },
+        "createdAt": { "type": "string" },
+        "completionDate": { "type": "string" },
+        "total": { "type": "string" },
+        "technician": { "type": "string" },
+        "seller": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["number", "clientId", "equipmentId", "status", "createdAt"]
+    },
+    "Part": {
+      "title": "Part",
+      "description": "Inventory part",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "additionalCodes": { "type": "array", "items": { "type": "string" } },
+        "category": { "type": "string" },
+        "stock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "price": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "image": { "type": "string" },
+        "brand": { "type": "string" },
+        "location": { "type": "string" }
+      },
+      "required": ["name", "code", "stock", "price"]
+    },
+    "Service": {
+      "title": "Service",
+      "description": "Service catalog item",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "category": { "type": "string" },
+        "price": { "type": "number" },
+        "estimatedTime": { "type": "string" },
+        "description": { "type": "string" }
+      },
+      "required": ["name", "code", "price"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "Supplier information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "document": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["Ativo", "Inativo"] },
+        "createdAt": { "type": "string" },
+        "zipCode": { "type": "string" },
+        "street": { "type": "string" },
+        "number": { "type": "string" },
+        "neighborhood": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["name", "status", "document"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction",
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "type": { "type": "string", "enum": ["Receita", "Despesa"] },
+        "entity": { "type": "string" },
+        "date": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "paymentDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pago", "Pendente", "Vencido", "Cancelado"] },
+        "value": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "referenceId": { "type": "string" },
+        "notes": { "type": "string" },
+        "isFixed": { "type": "boolean" }
+      },
+      "required": ["description", "type", "date", "dueDate", "status", "value"]
+    },
+    "FixedExpense": {
+      "title": "Fixed Expense",
+      "description": "Recurring fixed expense",
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "entity": { "type": "string" },
+        "value": { "type": "number" },
+        "dueDay": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["description", "value", "dueDay"]
+    },
+    "Mechanic": {
+      "title": "Mechanic",
+      "description": "Mechanic/Technician information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "specialty": { "type": "string" },
+        "status": { "type": "string", "enum": ["Ativo", "Inativo"] },
+        "commission": { "type": "number" }
+      },
+      "required": ["name", "status"]
+    },
+    "Seller": {
+      "title": "Seller",
+      "description": "Salesperson information",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "status": { "type": "string", "enum": ["Ativo", "Inativo"] },
+        "commission": { "type": "number" }
+      },
+      "required": ["name", "status"]
+    },
+    "SystemUser": {
+      "title": "System User",
+      "description": "User with access to the system",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "role": { "type": "string" },
+        "status": { "type": "string", "enum": ["Ativo", "Inativo"] },
+        "lastLogin": { "type": "string" },
+        "cpf": { "type": "string" },
+        "pixKey": { "type": "string" }
+      },
+      "required": ["name", "email", "role", "status"]
+    },
+    "PDVOrder": {
+      "title": "PDV Order",
+      "description": "Point of Sale order",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "installments": { "type": "number" },
+        "date": { "type": "string" },
+        "status": { "type": "string", "enum": ["Finalizado", "Orçamento"] }
+      },
+      "required": ["number", "total", "date", "status"]
+    },
+    "Rental": {
+      "title": "Rental",
+      "description": "Equipment rental record",
+      "type": "object",
+      "properties": {
+        "equipmentId": { "type": "string" },
+        "equipmentName": { "type": "string" },
+        "clientId": { "type": "string" },
+        "clientName": { "type": "string" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["Ativo", "Finalizado", "Atrasado", "Orçamento"] },
+        "totalValue": { "type": "number" },
+        "dailyRate": { "type": "number" },
+        "discountValue": { "type": "number" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "ignoreSundays": { "type": "boolean" }
+      },
+      "required": ["equipmentId", "clientId", "startDate", "endDate", "status", "totalValue"]
+    }
+  },
+  "firestore": {
+    "/company": { "schema": "CompanyData", "description": "Company settings" },
+    "/clients": { "schema": "Client", "description": "List of clients" },
+    "/equipment": { "schema": "Equipment", "description": "List of equipment" },
+    "/service_orders": { "schema": "ServiceOrder", "description": "List of service orders" },
+    "/parts": { "schema": "Part", "description": "Inventory parts" },
+    "/services": { "schema": "Service", "description": "Service catalog" },
+    "/suppliers": { "schema": "Supplier", "description": "List of suppliers" },
+    "/transactions": { "schema": "Transaction", "description": "Financial transactions" },
+    "/fixed_expenses": { "schema": "FixedExpense", "description": "Recurring expenses" },
+    "/mechanics": { "schema": "Mechanic", "description": "List of mechanics" },
+    "/sellers": { "schema": "Seller", "description": "List of sellers" },
+    "/users": { "schema": "SystemUser", "description": "System users" },
+    "/pdv_orders": { "schema": "PDVOrder", "description": "PDV sales" },
+    "/rentals": { "schema": "Rental", "description": "Equipment rentals" }
+  }
+}
