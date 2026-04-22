@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
-import { Part, Service, Client, Transaction, PDVOrder } from '@/src/types';
+import { Part, Service, Client, Transaction, PDVOrder, Seller } from '@/src/types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import ClientFormModal from './ClientFormModal';
