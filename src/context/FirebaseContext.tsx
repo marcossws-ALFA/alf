@@ -111,13 +111,31 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
 
   useEffect(() => {
+    const authTimeout = setTimeout(() => {
+      if (!isAuthReady) {
+        console.warn('Auth timeout: Forcing readiness state.');
+        setIsAuthReady(true);
+        setLoading(false);
+      }
+    }, 5000);
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      clearTimeout(authTimeout);
+      console.log('Auth state changed:', user ? 'Logged in' : 'Logged out');
       setUser(user);
+      setIsAuthReady(true);
+      setLoading(false);
+    }, (error) => {
+      clearTimeout(authTimeout);
+      console.error('Auth error:', error);
       setIsAuthReady(true);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(authTimeout);
+    };
   }, []);
 
   // Test connection
@@ -223,6 +241,9 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     if (obj === null || typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) return obj.map(sanitizeData);
     
+    // Evita sanitizar objetos que não são literais (como Timestamps do Firebase)
+    if (obj.constructor && obj.constructor.name !== 'Object') return obj;
+
     return Object.fromEntries(
       Object.entries(obj)
         .filter(([_, v]) => v !== undefined)
@@ -234,11 +255,12 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     add: async (col: string, data: any) => {
       const { id, ...rest } = data;
       const sanitized = sanitizeData(rest);
-      return addDoc(collection(db, col), {
+      const finalData = {
         ...sanitized,
         createdAt: data.createdAt || new Date().toISOString(),
         updatedAt: serverTimestamp()
-      });
+      };
+      return addDoc(collection(db, col), finalData);
     },
     update: async (col: string, id: string, data: any) => {
       const { id: _, ...rest } = data;

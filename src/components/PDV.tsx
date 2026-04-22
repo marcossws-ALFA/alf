@@ -224,7 +224,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
       }
 
       // 3. Update order status
-      await actions.update('pdvOrders', order.id, { status: 'Finalizado' });
+      await actions.update('pdv_orders', order.id, { status: 'Finalizado' });
 
       setSuccessMessage('Orçamento convertido em venda!');
       setShowSuccess(true);
@@ -247,7 +247,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
       }
 
       // 2. Update order status
-      await actions.update('pdvOrders', order.id, { status: 'Orçamento' });
+      await actions.update('pdv_orders', order.id, { status: 'Orçamento' });
 
       setSuccessMessage('Venda retornada para orçamento!');
       setShowSuccess(true);
@@ -389,7 +389,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
         status
       };
 
-      const docRef = await actions.add('pdvOrders', orderData);
+      const docRef = await actions.add('pdv_orders', orderData);
       setLastCreatedOrder({ id: docRef.id, ...orderData });
 
       setCart([]);
