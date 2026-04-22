@@ -188,19 +188,32 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     await signOut(auth);
   };
 
+  const sanitizeData = (obj: any): any => {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(sanitizeData);
+    
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => v !== undefined)
+        .map(([k, v]) => [k, sanitizeData(v)])
+    );
+  };
+
   const actions = {
     add: async (col: string, data: any) => {
       const { id, ...rest } = data;
+      const sanitized = sanitizeData(rest);
       return addDoc(collection(db, col), {
-        ...rest,
+        ...sanitized,
         createdAt: data.createdAt || new Date().toISOString(),
         updatedAt: serverTimestamp()
       });
     },
     update: async (col: string, id: string, data: any) => {
       const { id: _, ...rest } = data;
+      const sanitized = sanitizeData(rest);
       return updateDoc(doc(db, col, id), {
-        ...rest,
+        ...sanitized,
         updatedAt: serverTimestamp()
       });
     },
@@ -209,8 +222,9 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     },
     set: async (col: string, id: string, data: any) => {
       const { id: _, ...rest } = data;
+      const sanitized = sanitizeData(rest);
       return setDoc(doc(db, col, id), {
-        ...rest,
+        ...sanitized,
         updatedAt: serverTimestamp()
       });
     }
