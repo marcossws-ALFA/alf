@@ -320,22 +320,37 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 
   const actions = React.useMemo(() => ({
     add: async (col: string, data: any) => {
-      const { id, ...rest } = data;
-      const sanitized = sanitizeData(rest);
-      const finalData = {
-        ...sanitized,
-        createdAt: data.createdAt || new Date().toISOString(),
-        updatedAt: serverTimestamp()
-      };
-      return addDoc(collection(db, col), finalData);
+      try {
+        const { id, ...rest } = data;
+        const sanitized = sanitizeData(rest);
+        const finalData = {
+          ...sanitized,
+          createdAt: data.createdAt || new Date().toISOString(),
+          updatedAt: serverTimestamp()
+        };
+        console.log(`Tentando adicionar documento em ${col}...`);
+        const docRef = await addDoc(collection(db, col), finalData);
+        console.log(`Documento adicionado com sucesso em ${col}:`, docRef.id);
+        return docRef;
+      } catch (error: any) {
+        console.error(`Erro ao salvar em ${col}:`, error.message, error.code);
+        throw error;
+      }
     },
     update: async (col: string, id: string, data: any) => {
-      const { id: _, ...rest } = data;
-      const sanitized = sanitizeData(rest);
-      return updateDoc(doc(db, col, id), {
-        ...sanitized,
-        updatedAt: serverTimestamp()
-      });
+      try {
+        const { id: _, ...rest } = data;
+        const sanitized = sanitizeData(rest);
+        console.log(`Tentando atualizar documento ${id} em ${col}...`);
+        await updateDoc(doc(db, col, id), {
+          ...sanitized,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`Documento ${id} atualizado com sucesso em ${col}`);
+      } catch (error: any) {
+        console.error(`Erro ao atualizar em ${col}:`, error.message, error.code);
+        throw error;
+      }
     },
     remove: async (col: string, id: string) => {
       return deleteDoc(doc(db, col, id));
