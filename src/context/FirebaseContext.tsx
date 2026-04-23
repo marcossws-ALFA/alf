@@ -45,6 +45,9 @@ interface FirebaseContextType {
   loading: boolean;
   isAuthReady: boolean;
   isLoggingIn: boolean;
+  isAuthorized: boolean;
+  isAdmin: boolean;
+  userProfile: SystemUser | null;
   login: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   registerWithEmail: (email: string, pass: string) => Promise<void>;
@@ -94,6 +97,10 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [userProfile, setUserProfile] = useState<SystemUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -137,6 +144,50 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(authTimeout);
     };
   }, []);
+
+  // Sync user profile when user or systemUsers data changes
+  useEffect(() => {
+    if (user && !isCreatingProfile) {
+      const profile = systemUsers.find(u => u.email === user.email);
+      if (profile) {
+        setUserProfile(profile);
+        setIsAdmin(profile.role === 'Admin' || user.email === 'alfamaqmanutencao@gmail.com');
+        setIsAuthorized(profile.status === 'Ativo');
+      } else if (isAuthReady) {
+        // Se a lista de usuários já carregou e não achou, pode ser um novo usuário
+        const adminEmail = 'alfamaqmanutencao@gmail.com';
+        setIsCreatingProfile(true);
+        if (user.email === adminEmail) {
+          const newAdmin: SystemUser = {
+            id: '',
+            name: user.displayName || 'Administrador',
+            email: user.email!,
+            role: 'Admin',
+            status: 'Ativo',
+            lastLogin: new Date().toISOString()
+          };
+          actions.add('users', newAdmin).finally(() => setIsCreatingProfile(false));
+          setIsAdmin(true);
+          setIsAuthorized(true);
+        } else {
+          const newUser: SystemUser = {
+            id: '',
+            name: user.displayName || user.email!.split('@')[0],
+            email: user.email!,
+            role: 'Operador',
+            status: 'Inativo',
+            lastLogin: new Date().toISOString()
+          };
+          actions.add('users', newUser).finally(() => setIsCreatingProfile(false));
+          setIsAuthorized(false);
+        }
+      }
+    } else if (!user) {
+      setUserProfile(null);
+      setIsAdmin(false);
+      setIsAuthorized(false);
+    }
+  }, [user, systemUsers, isAuthReady, isCreatingProfile]);
 
   // Test connection
   useEffect(() => {
@@ -254,7 +305,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     return sanitized;
   };
 
-  const actions = {
+  const actions = React.useMemo(() => ({
     add: async (col: string, data: any) => {
       const { id, ...rest } = data;
       const sanitized = sanitizeData(rest);
@@ -298,7 +349,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     setFixedExpenses,
     setSystemUsers,
     setCompanyData
-  };
+  }), []);
 
   return (
     <FirebaseContext.Provider value={{ 
@@ -306,6 +357,9 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       loading, 
       isAuthReady, 
       isLoggingIn,
+      isAuthorized,
+      isAdmin,
+      userProfile,
       login, 
       loginWithEmail,
       registerWithEmail,

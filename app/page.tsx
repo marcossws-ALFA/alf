@@ -35,7 +35,7 @@ const initialCompanyData: CompanyData = {
 };
 
 export default function Home() {
-  const { user, loading, isAuthReady, login, logout, data, actions } = useFirebase();
+  const { user, loading, isAuthReady, login, logout, data, actions, isAuthorized, isAdmin, userProfile } = useFirebase();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -110,7 +110,52 @@ export default function Home() {
     );
   }
 
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf8ff] p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md bg-white p-10 rounded-[40px] shadow-2xl shadow-[#000666]/10 border border-[#c6c5d4]/20 text-center space-y-6"
+        >
+          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+            <QrCode size={40} />
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black text-[#000666]">Acesso em Análise</h2>
+            <p className="text-slate-500 font-medium text-sm leading-relaxed">
+              Olá, <span className="text-[#000666] font-bold">{user.displayName || user.email}</span>.<br />
+              Seu acesso ainda não foi liberado pelo administrador. 
+              Por favor, aguarde a ativação do seu perfil.
+            </p>
+          </div>
+
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col gap-1 items-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">E-mail Registrado</span>
+            <span className="text-sm font-black text-[#000666]">{user.email}</span>
+          </div>
+
+          <button
+            onClick={logout}
+            className="w-full py-4 bg-white border-2 border-[#000666]/10 text-[#000666] rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-95"
+          >
+            Sair desta conta
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
   const renderView = () => {
+    // Access control: Operators cannot access Finance or Settings
+    const isOperator = userProfile?.role === 'Operador';
+    const restrictedViews: View[] = ['finance', 'receivables', 'payables', 'settings'];
+    
+    if (isOperator && restrictedViews.includes(currentView)) {
+      return <Dashboard orders={data.serviceOrders} transactions={data.transactions} pdvOrders={data.pdvOrders} />;
+    }
+
     switch (currentView) {
       case 'dashboard':
         return <Dashboard orders={data.serviceOrders} transactions={data.transactions} pdvOrders={data.pdvOrders} />;

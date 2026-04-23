@@ -39,7 +39,7 @@ interface SettingsProps {
 }
 
 export default function Settings({ mechanics, setMechanics, sellers, setSellers, systemUsers, setSystemUsers, companyData, setCompanyData }: SettingsProps) {
-  const { user, actions, data } = useFirebase();
+  const { user, actions, data, isAdmin } = useFirebase();
   const [activeTab, setActiveTab] = useState<'mechanics' | 'sellers' | 'users' | 'company' | 'maintenance'>('company');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Mechanic | Seller | SystemUser | null>(null);
@@ -280,24 +280,28 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
         >
           <BadgeDollarSign size={18} /> Vendedores
         </button>
-        <button 
-          onClick={() => setActiveTab('users')}
-          className={cn(
-            "px-8 py-3.5 rounded-2xl text-sm font-black transition-all flex items-center gap-3",
-            activeTab === 'users' ? "bg-white text-[#000666] shadow-md" : "text-slate-400 hover:text-[#000666]"
-          )}
-        >
-          <Users size={18} /> Usuários
-        </button>
-        <button 
-          onClick={() => setActiveTab('maintenance')}
-          className={cn(
-            "px-8 py-3.5 rounded-2xl text-sm font-black transition-all flex items-center gap-3",
-            activeTab === 'maintenance' ? "bg-white text-red-600 shadow-md" : "text-slate-400 hover:text-red-400"
-          )}
-        >
-          <Trash2 size={18} /> Manutenção
-        </button>
+        {isAdmin && (
+          <button 
+            onClick={() => setActiveTab('users')}
+            className={cn(
+              "px-8 py-3.5 rounded-2xl text-sm font-black transition-all flex items-center gap-3",
+              activeTab === 'users' ? "bg-white text-[#000666] shadow-md" : "text-slate-400 hover:text-[#000666]"
+            )}
+          >
+            <Users size={18} /> Usuários
+          </button>
+        )}
+        {isAdmin && (
+          <button 
+            onClick={() => setActiveTab('maintenance')}
+            className={cn(
+              "px-8 py-3.5 rounded-2xl text-sm font-black transition-all flex items-center gap-3",
+              activeTab === 'maintenance' ? "bg-white text-red-600 shadow-md" : "text-slate-400 hover:text-red-400"
+            )}
+          >
+            <Trash2 size={18} /> Manutenção
+          </button>
+        )}
       </div>
 
       {/* Content Section */}
@@ -408,6 +412,25 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                      {activeTab === 'users' && (
+                        <button 
+                          onClick={async () => {
+                            const newStatus = item.status === 'Ativo' ? 'Inativo' : 'Ativo';
+                            try {
+                              await actions.update('users', item.id, { status: newStatus });
+                            } catch (error) {
+                              console.error('Error toggling user status:', error);
+                            }
+                          }}
+                          className={cn(
+                            "p-3 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest",
+                            item.status === 'Ativo' ? "bg-amber-50 text-amber-600 hover:bg-amber-100" : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                          )}
+                          title={item.status === 'Ativo' ? 'Bloquear Usuário' : 'Liberar Usuário'}
+                        >
+                          {item.status === 'Ativo' ? 'Bloquear' : 'Liberar'}
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleOpenModal(item)}
                         className="p-3 hover:bg-[#000666]/10 text-[#000666] rounded-xl transition-all"
@@ -417,6 +440,7 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
                       <button 
                         onClick={() => handleDelete(item.id)}
                         className="p-3 hover:bg-red-50 text-red-500 rounded-xl transition-all"
+                        disabled={item.email === 'alfamaqmanutencao@gmail.com'}
                       >
                         <Trash2 size={18} />
                       </button>

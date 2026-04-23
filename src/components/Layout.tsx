@@ -45,7 +45,7 @@ export default function Layout({
   companyData
 }: LayoutProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const { user, logout } = useFirebase();
+  const { user, logout, isAdmin, userProfile } = useFirebase();
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -57,11 +57,11 @@ export default function Layout({
     { id: 'equipment', label: 'Equipamentos', icon: Box },
     { id: 'parts', label: 'Peças / Estoque', icon: Package },
     { id: 'services', label: 'Serviços', icon: Wrench },
-    { id: 'finance', label: 'Financeiro', icon: TrendingUp },
-    { id: 'settings', label: 'Configurações', icon: SettingsIcon },
+    { id: 'finance', label: 'Financeiro', icon: TrendingUp, adminOnly: true },
+    { id: 'settings', label: 'Configurações', icon: SettingsIcon, adminOnly: true },
   ];
 
-  const mainMenuItems = menuItems;
+  const mainMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin || userProfile?.role === 'Gerente');
 
   return (
     <div className="flex h-screen bg-[#fbf8ff]">
@@ -183,13 +183,18 @@ export default function Layout({
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex flex-col items-end mr-2">
-              <span className="text-sm font-black text-[#000666] leading-tight">{user?.displayName || user?.email}</span>
-              <span className="text-[10px] font-bold text-slate-400 capitalize tracking-widest">
-                {user?.email && user.email.includes('admin') ? 'Administrador' : 'Operador'}
+            <div className="flex flex-col items-end mr-2 text-right">
+              <span className="text-sm font-black text-[#000666] leading-tight truncate max-w-[150px]">
+                {userProfile?.name || user?.displayName || user?.email}
+              </span>
+              <span className={cn(
+                "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md",
+                isAdmin ? "bg-purple-50 text-purple-600" : "bg-blue-50 text-blue-600"
+              )}>
+                {isAdmin ? 'Administrador' : userProfile?.role || 'Operador'}
               </span>
             </div>
-            <div className="w-10 h-10 bg-[#f5f2fb] border-2 border-white shadow-md rounded-xl flex items-center justify-center overflow-hidden">
+            <div className="w-10 h-10 bg-[#f5f2fb] border-2 border-white shadow-md rounded-xl flex items-center justify-center overflow-hidden shrink-0">
               {user?.photoURL ? (
                 <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
               ) : (
