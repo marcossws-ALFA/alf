@@ -36,10 +36,12 @@ const initialCompanyData: CompanyData = {
 };
 
 export default function Home() {
-  const { user, loading, isAuthReady, login, logout, data, actions, isAuthorized, isAdmin, userProfile, needsProfileUpdate } = useFirebase();
+  const { user, loading, isAuthReady, login, loginWithEmail, registerWithEmail, logout, data, actions, isAuthorized, isAdmin, userProfile, needsProfileUpdate } = useFirebase();
   const [currentView, setCurrentView] = useState<View>('dashboard');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'google'>('login');
+  const [isAuthProcessing, setIsAuthProcessing] = useState(false);
 
   // Estados para o formulário de perfil
   const [profileForm, setProfileForm] = useState({
@@ -75,6 +77,30 @@ export default function Home() {
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Erro ao atualizar perfil.');
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isAuthProcessing) return;
+    setIsAuthProcessing(true);
+    try {
+      if (authMode === 'login') {
+        await loginWithEmail(loginEmail, loginPassword);
+      } else {
+        await registerWithEmail(loginEmail, loginPassword);
+        alert('Conta criada com sucesso! Agora complete seu cadastro.');
+      }
+    } catch (error: any) {
+      console.error('Auth error:', error);
+      const msg = error.code === 'auth/user-not-found' ? 'Usuário não encontrado.' :
+                  error.code === 'auth/wrong-password' ? 'Senha incorreta.' :
+                  error.code === 'auth/email-already-in-use' ? 'Este e-mail já está em uso.' :
+                  error.code === 'auth/weak-password' ? 'A senha deve ter pelo menos 6 caracteres.' :
+                  'Erro ao realizar autenticação. Verifique seus dados.';
+      alert(msg);
+    } finally {
+      setIsAuthProcessing(false);
     }
   };
   
@@ -136,13 +162,66 @@ export default function Home() {
           </div>
 
           <div className="space-y-4">
-            <button
-              onClick={login}
-              className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all"
-            >
-              <LogIn size={20} />
-              Acessar com Google
-            </button>
+            {authMode === 'google' ? (
+              <button
+                onClick={login}
+                className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                <LogIn size={20} />
+                Acessar com Google
+              </button>
+            ) : (
+              <form onSubmit={handleEmailAuth} className="space-y-4">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">E-mail</label>
+                  <input 
+                    required
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    className="w-full px-5 py-4 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm font-bold text-[#1b1b21] focus:bg-white focus:border-[#000666]/10 outline-none transition-all"
+                    placeholder="exemplo@email.com"
+                  />
+                </div>
+                <div className="space-y-1.5 text-left">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Senha</label>
+                  <input 
+                    required
+                    type="password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    className="w-full px-5 py-4 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm font-bold text-[#1b1b21] focus:bg-white focus:border-[#000666]/10 outline-none transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isAuthProcessing}
+                  className="w-full py-4 bg-[#000666] text-white rounded-2xl font-black shadow-lg shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {isAuthProcessing ? 'Processando...' : authMode === 'login' ? 'Entrar no Sistema' : 'Criar minha Conta'}
+                </button>
+              </form>
+            )}
+
+            <div className="flex flex-col gap-2 pt-2">
+              <button 
+                onClick={() => setAuthMode(authMode === 'google' ? 'login' : 'google')}
+                className="text-xs font-bold text-[#000666] hover:underline"
+              >
+                {authMode === 'google' ? 'Acessar com E-mail e Senha' : 'Voltar para Login Google'}
+              </button>
+              
+              {authMode !== 'google' && (
+                <button 
+                  onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+                  className="text-xs font-bold text-slate-500 hover:text-[#000666]"
+                >
+                  {authMode === 'login' ? 'Não tem uma conta? Cadastre-se' : 'Já tem uma conta? Faça Login'}
+                </button>
+              )}
+            </div>
+
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-[#c6c5d4]/30"></div>
@@ -152,7 +231,7 @@ export default function Home() {
               </div>
             </div>
             <p className="text-center text-xs text-slate-400 font-medium">
-              Utilize sua conta corporativa para acessar o painel administrativo.
+              Utilize suas credenciais autorizadas para acessar o painel administrativo.
             </p>
           </div>
         </motion.div>

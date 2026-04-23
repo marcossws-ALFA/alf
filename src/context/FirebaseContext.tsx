@@ -162,8 +162,12 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         // Verificar se faltam dados obrigatórios (exceto para o admin mestre se ele já estiver ativo)
         const isMissingData = !profile.cpf || !profile.phone || !profile.name;
         setNeedsProfileUpdate(isMissingData && !isMaster);
-      } else if (isAuthReady && hasLoadedUsers) {
+      } else if (isAuthReady && hasLoadedUsers && !isCreatingProfile) {
         // Se a lista de usuários já carregou e não achou, pode ser um novo usuário
+        // Verificação extra de segurança para evitar duplicatas em disparos rápidos do useEffect
+        const exists = systemUsers.some(u => u.email === user.email);
+        if (exists) return;
+
         setIsCreatingProfile(true);
         if (MASTER_ADMINS.includes(user.email || '')) {
           const newAdmin: SystemUser = {
