@@ -39,12 +39,13 @@ interface SettingsProps {
 }
 
 export default function Settings({ mechanics, setMechanics, sellers, setSellers, systemUsers, setSystemUsers, companyData, setCompanyData }: SettingsProps) {
-  const { actions } = useFirebase();
-  const [activeTab, setActiveTab] = useState<'mechanics' | 'sellers' | 'users' | 'company'>('company');
+  const { user, actions, data } = useFirebase();
+  const [activeTab, setActiveTab] = useState<'mechanics' | 'sellers' | 'users' | 'company' | 'maintenance'>('company');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Mechanic | Seller | SystemUser | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [customRoles, setCustomRoles] = useState<string[]>(['Admin', 'Gerente', 'Operador']);
+  const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
 
   const [formData, setFormData] = useState<any>({
     name: '',
@@ -288,10 +289,19 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
         >
           <Users size={18} /> Usuários
         </button>
+        <button 
+          onClick={() => setActiveTab('maintenance')}
+          className={cn(
+            "px-8 py-3.5 rounded-2xl text-sm font-black transition-all flex items-center gap-3",
+            activeTab === 'maintenance' ? "bg-white text-red-600 shadow-md" : "text-slate-400 hover:text-red-400"
+          )}
+        >
+          <Trash2 size={18} /> Manutenção
+        </button>
       </div>
 
       {/* Content Section */}
-      {activeTab !== 'company' ? (
+      {activeTab === 'mechanics' || activeTab === 'sellers' || activeTab === 'users' ? (
         <section className="bg-white rounded-[40px] shadow-sm border border-[#c6c5d4]/10 overflow-hidden">
           <div className="p-8 border-b border-[#c6c5d4]/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -425,6 +435,246 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
           </table>
         </div>
       </section>
+      ) : activeTab === 'maintenance' ? (
+        <section className="bg-white rounded-[40px] shadow-sm border border-[#c6c5d4]/10 p-8">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-red-600 text-white rounded-2xl">
+              <Trash2 size={24} />
+            </div>
+            <div>
+              <h3 className="font-black text-2xl text-[#1b1b21]">Manutenção do Sistema</h3>
+              <p className="text-sm font-bold text-slate-400">Limpeza e purgação de dados (CUIDADO: Ação Irreversível)</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl">
+            {/* Financial Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Registros Financeiros</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Transações e Despesas Fixas</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todo o histórico de entradas, saídas e contas a pagar/receber.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODOS os registros financeiros? Esta ação não pode ser desfeita.')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all([
+                        ...data.transactions.map(t => actions.remove('transactions', t.id)),
+                        ...data.fixedExpenses.map(f => actions.remove('fixed_expenses', f.id))
+                      ]);
+                      alert('Registros financeiros limpos!');
+                    } catch (e) {
+                      alert('Erro ao limpar registros financeiros.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Financeiro'}
+              </button>
+            </div>
+
+            {/* Service Orders Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Ordens de Serviço</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Histórico de OS</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todas as Ordens de Serviço cadastradas no sistema.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODAS as Ordens de Serviço?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all(data.serviceOrders.map(o => actions.remove('service_orders', o.id)));
+                      alert('Ordens de Serviço limpas!');
+                    } catch (e) {
+                      alert('Erro ao limpar ordens de serviço.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Todas as OS'}
+              </button>
+            </div>
+
+            {/* Sales Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Vendas e Orçamentos (PDV)</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">PDV e Locações</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todos os pedidos de venda, orçamentos do PDV e contratos de locação.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODAS as vendas e locações?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all([
+                        ...data.pdvOrders.map(o => actions.remove('pdv_orders', o.id)),
+                        ...data.rentals.map(r => actions.remove('rentals', r.id))
+                      ]);
+                      alert('Vendas e orçamentos limpos!');
+                    } catch (e) {
+                      alert('Erro ao limpar vendas e orçamentos.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Vendas/Locações'}
+              </button>
+            </div>
+
+            {/* Clients Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Base de Clientes</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Cadastros de Clientes</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todos os clientes cadastrados. Recomendado apenas para reset de testes.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODOS os clientes?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all(data.clients.map(c => actions.remove('clients', c.id)));
+                      alert('Base de clientes limpa!');
+                    } catch (e) {
+                      alert('Erro ao limpar base de clientes.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Clientes'}
+              </button>
+            </div>
+
+            {/* Equipment Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Frota de Equipamentos</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Ativos cadastrados</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todos os equipamentos vinculados ou não a clientes.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODOS os equipamentos?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all(data.equipment.map(e => actions.remove('equipment', e.id)));
+                      alert('Frota de equipamentos limpa!');
+                    } catch (e) {
+                      alert('Erro ao limpar frota de equipamentos.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Equipamentos'}
+              </button>
+            </div>
+
+            {/* Parts Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Estoque de Peças</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Produtos e Peças</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todo o cadastro de peças e produtos do estoque.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODAS as peças do estoque?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all(data.parts.map(p => actions.remove('parts', p.id)));
+                      alert('Estoque de peças limpo!');
+                    } catch (e) {
+                      alert('Erro ao limpar estoque de peças.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Estoque de Peças'}
+              </button>
+            </div>
+
+            {/* Services & Suppliers Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Serviços e Fornecedores</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Cadastros Base</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga todos os serviços e fornecedores cadastrados.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODOS os serviços e fornecedores?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all([
+                        ...data.services.map(s => actions.remove('services', s.id)),
+                        ...data.suppliers.map(sup => actions.remove('suppliers', sup.id))
+                      ]);
+                      alert('Serviços e fornecedores limpos!');
+                    } catch (e) {
+                      alert('Erro ao limpar serviços e fornecedores.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Serviços/Fornecedores'}
+              </button>
+            </div>
+          </div>
+        </section>
       ) : (
         <section className="bg-white rounded-[40px] shadow-sm border border-[#c6c5d4]/10 p-8">
           <div className="flex items-center gap-4 mb-8">
