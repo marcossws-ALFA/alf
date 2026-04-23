@@ -153,47 +153,49 @@ export default function Suppliers({ suppliers, setSuppliers, transactions }: Sup
     e.target.value = '';
   };
 
-  const handleConfirmXMLImport = (data: any) => {
+  const handleConfirmXMLImport = async (data: any) => {
     const cnpj = data.supplier.cnpj.replace(/\D/g, '');
-    const existingSupplierIndex = suppliers.findIndex(s => s.document.replace(/\D/g, '') === cnpj);
+    const existingSupplier = suppliers.find(s => s.document.replace(/\D/g, '') === cnpj);
     
-    if (existingSupplierIndex !== -1) {
-      const updatedSuppliers = [...suppliers];
-      updatedSuppliers[existingSupplierIndex] = {
-        ...updatedSuppliers[existingSupplierIndex],
-        name: data.supplier.name,
-        email: data.supplier.email,
-        phone: data.supplier.phone,
-        street: data.supplier.address.street,
-        number: data.supplier.address.number,
-        neighborhood: data.supplier.address.neighborhood,
-        city: data.supplier.address.city,
-        state: data.supplier.address.state,
-        zipCode: data.supplier.address.zip,
-      };
-      setSuppliers(updatedSuppliers);
-    } else {
-      const newSupplier: Supplier = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: data.supplier.name,
-        document: data.supplier.cnpj,
-        email: data.supplier.email,
-        phone: data.supplier.phone,
-        category: 'Fornecedores',
-        status: 'Ativo',
-        createdAt: new Date().toLocaleDateString('pt-BR'),
-        street: data.supplier.address.street,
-        number: data.supplier.address.number,
-        neighborhood: data.supplier.address.neighborhood,
-        city: data.supplier.address.city,
-        state: data.supplier.address.state,
-        zipCode: data.supplier.address.zip,
-      };
-      setSuppliers(prev => [newSupplier, ...prev]);
-    }
+    try {
+      if (existingSupplier) {
+        await actions.update('suppliers', existingSupplier.id, {
+          name: data.supplier.name,
+          email: data.supplier.email,
+          phone: data.supplier.phone,
+          street: data.supplier.address.street,
+          number: data.supplier.address.number,
+          neighborhood: data.supplier.address.neighborhood,
+          city: data.supplier.address.city,
+          state: data.supplier.address.state,
+          zipCode: data.supplier.address.zip,
+        });
+      } else {
+        const newSupplier = {
+          name: data.supplier.name,
+          document: data.supplier.cnpj,
+          email: data.supplier.email,
+          phone: data.supplier.phone,
+          category: 'Fornecedores',
+          status: 'Ativo',
+          createdAt: new Date().toLocaleDateString('pt-BR'),
+          street: data.supplier.address.street,
+          number: data.supplier.address.number,
+          neighborhood: data.supplier.address.neighborhood,
+          city: data.supplier.address.city,
+          state: data.supplier.address.state,
+          zipCode: data.supplier.address.zip,
+        };
+        await actions.add('suppliers', newSupplier);
+      }
 
-    setIsXMLModalOpen(false);
-    setXmlImportData(null);
+      setIsXMLModalOpen(false);
+      setXmlImportData(null);
+      alert('Fornecedor importado/atualizado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao importar fornecedor do XML:', error);
+      alert('Erro ao persistir fornecedor.');
+    }
   };
 
   return (

@@ -362,106 +362,108 @@ export default function Parts({
     e.target.value = '';
   };
 
-  const handleConfirmXMLImport = (data: any) => {
+  const handleConfirmXMLImport = async (data: any) => {
     const cnpj = data.supplier.cnpj.replace(/\D/g, '');
-    const existingSupplierIndex = suppliers.findIndex(s => s.document.replace(/\D/g, '') === cnpj);
+    const existingSupplier = suppliers.find(s => s.document.replace(/\D/g, '') === cnpj);
     
     let supplierName = data.supplier.name;
 
-    if (existingSupplierIndex !== -1) {
-      const updatedSuppliers = [...suppliers];
-      updatedSuppliers[existingSupplierIndex] = {
-        ...updatedSuppliers[existingSupplierIndex],
-        name: data.supplier.name,
-        email: data.supplier.email,
-        phone: data.supplier.phone,
-        street: data.supplier.address.street,
-        number: data.supplier.address.number,
-        neighborhood: data.supplier.address.neighborhood,
-        city: data.supplier.address.city,
-        state: data.supplier.address.state,
-        zipCode: data.supplier.address.zip,
-      };
-      setSuppliers(updatedSuppliers);
-    } else {
-      const newSupplier: Supplier = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: data.supplier.name,
-        document: data.supplier.cnpj,
-        email: data.supplier.email,
-        phone: data.supplier.phone,
-        category: 'Fornecedores',
-        status: 'Ativo',
-        createdAt: new Date().toLocaleDateString('pt-BR'),
-        street: data.supplier.address.street,
-        number: data.supplier.address.number,
-        neighborhood: data.supplier.address.neighborhood,
-        city: data.supplier.address.city,
-        state: data.supplier.address.state,
-        zipCode: data.supplier.address.zip,
-      };
-      setSuppliers(prev => [newSupplier, ...prev]);
+    try {
+      if (existingSupplier) {
+        await actions.update('suppliers', existingSupplier.id, {
+          name: data.supplier.name,
+          email: data.supplier.email,
+          phone: data.supplier.phone,
+          street: data.supplier.address.street,
+          number: data.supplier.address.number,
+          neighborhood: data.supplier.address.neighborhood,
+          city: data.supplier.address.city,
+          state: data.supplier.address.state,
+          zipCode: data.supplier.address.zip,
+        });
+      } else {
+        const newSupplier = {
+          name: data.supplier.name,
+          document: data.supplier.cnpj,
+          email: data.supplier.email,
+          phone: data.supplier.phone,
+          category: 'Fornecedores',
+          status: 'Ativo',
+          createdAt: new Date().toLocaleDateString('pt-BR'),
+          street: data.supplier.address.street,
+          number: data.supplier.address.number,
+          neighborhood: data.supplier.address.neighborhood,
+          city: data.supplier.address.city,
+          state: data.supplier.address.state,
+          zipCode: data.supplier.address.zip,
+        };
+        await actions.add('suppliers', newSupplier);
+      }
+
+      for (const inst of data.installments) {
+        await actions.add('transactions', {
+          description: `NF ${data.invoiceNumber} - Parcela ${inst.number} (Peças)`,
+          entity: supplierName,
+          value: inst.value,
+          date: new Date().toLocaleDateString('pt-BR'),
+          dueDate: inst.dueDate,
+          category: 'Fornecedores',
+          type: 'Despesa',
+          status: inst.status || 'Pendente',
+          notes: `Importado via XML da NF ${data.invoiceNumber} no catálogo de peças`
+        });
+      }
+
+      setIsXMLModalOpen(false);
+      setXmlImportData(null);
+      alert('Importação financeira e atualização de fornecedor concluídas!');
+    } catch (error) {
+      console.error('Erro ao importar financeiro do XML:', error);
+      alert('Erro ao persistir dados financeiros do XML.');
     }
-
-    const newTransactions: Transaction[] = data.installments.map((inst: any) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      description: `NF ${data.invoiceNumber} - Parcela ${inst.number} (Peças)`,
-      entity: supplierName,
-      value: inst.value,
-      date: new Date().toLocaleDateString('pt-BR'),
-      dueDate: inst.dueDate,
-      category: 'Fornecedores',
-      type: 'Despesa',
-      status: inst.status || 'Pendente',
-      notes: `Importado via XML da NF ${data.invoiceNumber} no catálogo de peças`
-    }));
-
-    setTransactions(prev => [...newTransactions, ...prev]);
-    setIsXMLModalOpen(false);
-    setXmlImportData(null);
-    alert('Importação financeira e atualização de fornecedor concluídas!');
   };
 
-  const confirmImport = () => {
+  const confirmImport = async () => {
     const toImport = pendingImportParts.filter(p => selectedImportIds.has(p.id));
     
-    setParts(prev => {
-      let updated = [...prev];
-      toImport.forEach(newPart => {
-        const existingIndex = updated.findIndex(p => 
+    try {
+      for (const newPart of toImport) {
+        const existingPart = parts.find(p => 
           p.code === newPart.code || 
           p.additionalCodes?.includes(newPart.code)
         );
 
-        if (existingIndex !== -1) {
-          const existing = updated[existingIndex];
+        if (existingPart) {
           const mergedAdditional = Array.from(new Set([
-            ...(existing.additionalCodes || []),
+            ...(existingPart.additionalCodes || []),
             ...(newPart.additionalCodes || [])
-          ])).filter(c => c !== existing.code);
+          ])).filter(c => c !== existingPart.code);
 
-          updated[existingIndex] = {
-            ...existing,
+          await actions.update('parts', existingPart.id, {
             costPrice: newPart.costPrice,
             price: newPart.price,
-            stock: existing.stock + newPart.stock,
+            stock: (existingPart.stock || 0) + newPart.stock,
             additionalCodes: mergedAdditional
-          };
+          });
         } else {
-          updated.push(newPart);
+          // Remover o ID temporário gerado no import
+          const { id, ...partData } = newPart;
+          await actions.add('parts', partData);
         }
-      });
-      return updated;
-    });
+      }
 
-    setIsImportModalOpen(false);
-    setPendingImportParts([]);
-    
-    // After parts import, trigger financial review
-    if (xmlImportData) {
-      setIsXMLModalOpen(true);
-    } else {
-      alert('Importação de peças concluída!');
+      setIsImportModalOpen(false);
+      setPendingImportParts([]);
+      
+      // After parts import, trigger financial review
+      if (xmlImportData) {
+        setIsXMLModalOpen(true);
+      } else {
+        alert('Importação de peças concluída!');
+      }
+    } catch (error) {
+      console.error('Erro ao importar peças:', error);
+      alert('Erro ao salvar as peças no banco de dados.');
     }
   };
 

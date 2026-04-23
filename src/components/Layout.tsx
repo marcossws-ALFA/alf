@@ -303,7 +303,14 @@ export default function Layout({
             </div>
             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#f5f2fb] border-2 border-white shadow-md rounded-xl flex items-center justify-center overflow-hidden shrink-0">
               {user?.photoURL ? (
-                <img src={user.photoURL} alt="User" className="w-full h-full object-cover" />
+                <Image 
+                  src={user.photoURL} 
+                  alt="User" 
+                  width={40} 
+                  height={40} 
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover" 
+                />
               ) : (
                 <span className="font-black text-[#000666] text-xs lg:text-sm uppercase">
                   {user?.email?.substring(0, 2) || 'AU'}

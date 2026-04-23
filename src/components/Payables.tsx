@@ -280,63 +280,65 @@ export default function Payables({
     e.target.value = '';
   };
 
-  const handleConfirmXMLImport = (data: any) => {
+  const handleConfirmXMLImport = async (data: any) => {
     const cnpj = data.supplier.cnpj.replace(/\D/g, '');
-    const existingSupplierIndex = suppliers.findIndex(s => s.document.replace(/\D/g, '') === cnpj);
+    const existingSupplier = suppliers.find(s => s.document.replace(/\D/g, '') === cnpj);
     
     let supplierName = data.supplier.name;
 
-    if (existingSupplierIndex !== -1) {
-      const updatedSuppliers = [...suppliers];
-      updatedSuppliers[existingSupplierIndex] = {
-        ...updatedSuppliers[existingSupplierIndex],
-        name: data.supplier.name,
-        email: data.supplier.email,
-        phone: data.supplier.phone,
-        street: data.supplier.address.street,
-        number: data.supplier.address.number,
-        neighborhood: data.supplier.address.neighborhood,
-        city: data.supplier.address.city,
-        state: data.supplier.address.state,
-        zipCode: data.supplier.address.zip,
-      };
-      setSuppliers(updatedSuppliers);
-    } else {
-      const newSupplier: Supplier = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: data.supplier.name,
-        document: data.supplier.cnpj,
-        email: data.supplier.email,
-        phone: data.supplier.phone,
-        category: 'Fornecedores',
-        status: 'Ativo',
-        createdAt: new Date().toLocaleDateString('pt-BR'),
-        street: data.supplier.address.street,
-        number: data.supplier.address.number,
-        neighborhood: data.supplier.address.neighborhood,
-        city: data.supplier.address.city,
-        state: data.supplier.address.state,
-        zipCode: data.supplier.address.zip,
-      };
-      setSuppliers(prev => [newSupplier, ...prev]);
+    try {
+      if (existingSupplier) {
+        await actions.update('suppliers', existingSupplier.id, {
+          name: data.supplier.name,
+          email: data.supplier.email,
+          phone: data.supplier.phone,
+          street: data.supplier.address.street,
+          number: data.supplier.address.number,
+          neighborhood: data.supplier.address.neighborhood,
+          city: data.supplier.address.city,
+          state: data.supplier.address.state,
+          zipCode: data.supplier.address.zip,
+        });
+      } else {
+        const newSupplier = {
+          name: data.supplier.name,
+          document: data.supplier.cnpj,
+          email: data.supplier.email,
+          phone: data.supplier.phone,
+          category: 'Fornecedores',
+          status: 'Ativo',
+          createdAt: new Date().toLocaleDateString('pt-BR'),
+          street: data.supplier.address.street,
+          number: data.supplier.address.number,
+          neighborhood: data.supplier.address.neighborhood,
+          city: data.supplier.address.city,
+          state: data.supplier.address.state,
+          zipCode: data.supplier.address.zip,
+        };
+        await actions.add('suppliers', newSupplier);
+      }
+
+      for (const inst of data.installments) {
+        await actions.add('transactions', {
+          description: `NF ${data.invoiceNumber} - Parcela ${inst.number}`,
+          entity: supplierName,
+          value: inst.value,
+          date: new Date().toLocaleDateString('pt-BR'),
+          dueDate: inst.dueDate,
+          category: 'Fornecedores',
+          type: 'Despesa',
+          status: inst.status || 'Pendente',
+          notes: `Importado via XML da NF ${data.invoiceNumber}`
+        });
+      }
+
+      setIsXMLModalOpen(false);
+      setXmlImportData(null);
+      alert('Importação XML realizada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao importar XML:', error);
+      alert('Erro ao persistir dados do XML.');
     }
-
-    const newTransactions: Transaction[] = data.installments.map((inst: any) => ({
-      id: Math.random().toString(36).substr(2, 9),
-      description: `NF ${data.invoiceNumber} - Parcela ${inst.number}`,
-      entity: supplierName,
-      value: inst.value,
-      date: new Date().toLocaleDateString('pt-BR'),
-      dueDate: inst.dueDate,
-      category: 'Fornecedores',
-      type: 'Despesa',
-      status: inst.status || 'Pendente',
-      notes: `Importado via XML da NF ${data.invoiceNumber}`
-    }));
-
-    setTransactions(prev => [...newTransactions, ...prev]);
-    setIsXMLModalOpen(false);
-    setXmlImportData(null);
   };
 
   const generatePDF = () => {
@@ -382,10 +384,9 @@ export default function Payables({
     return matchesSearch && matchesStatus;
   });
 
-  const handleAddFixedExpense = (e: React.FormEvent) => {
+  const handleAddFixedExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newFixed: FixedExpense = {
-      id: editingFixed?.id || Math.random().toString(36).substr(2, 9),
+    const fixedData = {
       description: fixedFormData.description,
       category: fixedFormData.category,
       entity: fixedFormData.entity,
@@ -393,64 +394,71 @@ export default function Payables({
       dueDay: parseInt(fixedFormData.dueDay, 10)
     };
 
-    if (editingFixed) {
-      setFixedExpenses(prev => prev.map(f => f.id === editingFixed.id ? newFixed : f));
-    } else {
-      setFixedExpenses(prev => [newFixed, ...prev]);
+    try {
+      if (editingFixed) {
+        await actions.update('fixed_expenses', editingFixed.id, fixedData);
+      } else {
+        await actions.add('fixed_expenses', fixedData);
+      }
+      setIsFixedModalOpen(false);
+      setEditingFixed(null);
+      setFixedFormData({
+        description: '',
+        category: 'Infraestrutura',
+        entity: '',
+        value: '',
+        dueDay: '10'
+      });
+    } catch (error) {
+      console.error('Erro ao salvar conta fixa:', error);
+      alert('Erro ao salvar conta fixa.');
     }
-
-    setIsFixedModalOpen(false);
-    setEditingFixed(null);
-    setFixedFormData({
-      description: '',
-      category: 'Infraestrutura',
-      entity: '',
-      value: '',
-      dueDay: '10'
-    });
   };
 
-  const handleLaunchFixed = () => {
+  const handleLaunchFixed = async () => {
     const today = new Date();
     const month = today.getMonth() + 1;
     const year = today.getFullYear();
     const monthStr = month < 10 ? `0${month}` : month;
 
-    const newTxs: Transaction[] = fixedExpenses.map(f => {
+    const toLaunch = fixedExpenses.filter(f => {
       const dueDayStr = f.dueDay < 10 ? `0${f.dueDay}` : f.dueDay;
-      const dueDate = `${dueDayStr}/${monthStr}/${year}`;
-      
-      // Check if already launched for this month
-      const exists = transactions.some(t => 
+      const dueDateStr = `${dueDayStr}/${monthStr}/${year}`;
+      return !transactions.some(t => 
         t.isFixed && 
         t.description === f.description && 
-        t.dueDate === dueDate
+        t.dueDate === dueDateStr
       );
+    });
 
-      if (exists) return null;
-
-      return {
-        id: Math.random().toString(36).substr(2, 9),
-        description: f.description,
-        entity: f.entity,
-        value: f.value,
-        date: today.toLocaleDateString('pt-BR'),
-        dueDate: dueDate,
-        category: f.category,
-        type: 'Despesa',
-        status: 'Pendente',
-        isFixed: true,
-        notes: 'Lançamento automático de conta fixa'
-      } as Transaction;
-    }).filter(t => t !== null) as Transaction[];
-
-    if (newTxs.length === 0) {
+    if (toLaunch.length === 0) {
       alert('Todas as contas fixas deste mês já foram lançadas.');
       return;
     }
 
-    setTransactions(prev => [...newTxs, ...prev]);
-    alert(`${newTxs.length} contas fixas lançadas com sucesso para o mês atual.`);
+    try {
+      for (const f of toLaunch) {
+        const dueDayStr = f.dueDay < 10 ? `0${f.dueDay}` : f.dueDay;
+        const dueDate = `${dueDayStr}/${monthStr}/${year}`;
+        
+        await actions.add('transactions', {
+          description: f.description,
+          entity: f.entity,
+          value: f.value,
+          date: today.toLocaleDateString('pt-BR'),
+          dueDate: dueDate,
+          category: f.category,
+          type: 'Despesa',
+          status: 'Pendente',
+          isFixed: true,
+          notes: 'Lançamento automático de conta fixa'
+        });
+      }
+      alert(`${toLaunch.length} contas fixas lançadas com sucesso!`);
+    } catch (error) {
+      console.error('Erro ao lançar contas fixas:', error);
+      alert('Erro ao lançar algumas contas.');
+    }
   };
 
   const handleDeleteFixed = async (id: string) => {
@@ -1040,25 +1048,29 @@ export default function Payables({
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           const today = new Date();
                           const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
                           const dueDateStr = lastDay.toLocaleDateString('pt-BR');
 
-                          const newTx: Transaction = {
-                            id: Math.random().toString(36).substring(2, 11),
-                            description: `Comissão - ${c.reference}`,
-                            entity: c.personName,
-                            value: c.commissionValue,
-                            date: today.toLocaleDateString('pt-BR'),
-                            dueDate: dueDateStr,
-                            category: 'Salários',
-                            type: 'Despesa',
-                            status: 'Pendente',
-                            referenceId: c.id,
-                            notes: `Comissão de ${c.role} referente à ${c.reference}`
-                          };
-                          setTransactions(prev => [newTx, ...prev]);
+                          try {
+                            await actions.add('transactions', {
+                              description: `Comissão - ${c.reference}`,
+                              entity: c.personName,
+                              value: c.commissionValue,
+                              date: today.toLocaleDateString('pt-BR'),
+                              dueDate: dueDateStr,
+                              category: 'Salários',
+                              type: 'Despesa',
+                              status: 'Pendente',
+                              referenceId: c.id,
+                              notes: `Comissão de ${c.role} referente à ${c.reference}`
+                            });
+                            alert('Pagamento de comissão lançado com sucesso!');
+                          } catch (error) {
+                            console.error('Erro ao lançar comissão:', error);
+                            alert('Erro ao lançar pagamento de comissão.');
+                          }
                         }}
                         className="px-4 py-2 bg-[#000666] text-white text-[10px] font-bold rounded-xl hover:bg-[#000666]/90 transition-all shadow-sm"
                       >

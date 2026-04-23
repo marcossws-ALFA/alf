@@ -120,6 +120,84 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [rentals, setRentals] = useState<Rental[]>([]);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
 
+  const sanitizeData = React.useCallback((obj: any): any => {
+    if (obj === null || obj === undefined) return null;
+    if (typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(sanitizeData);
+    
+    // Evita sanitizar objetos que não são literais (como Timestamps do Firebase)
+    if (obj.constructor && obj.constructor.name !== 'Object') return obj;
+
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        sanitized[key] = sanitizeData(value);
+      }
+    }
+    return sanitized;
+  }, []);
+
+  const actions = React.useMemo(() => ({
+    add: async (col: string, data: any) => {
+      try {
+        const { id, ...rest } = data;
+        const sanitized = sanitizeData(rest);
+        const finalData = {
+          ...sanitized,
+          createdAt: data.createdAt || new Date().toISOString(),
+          updatedAt: serverTimestamp()
+        };
+        console.log(`Tentando adicionar documento em ${col}...`);
+        const docRef = await addDoc(collection(db, col), finalData);
+        console.log(`Documento adicionado com sucesso em ${col}:`, docRef.id);
+        return docRef;
+      } catch (error: any) {
+        console.error(`Erro ao salvar em ${col}:`, error.message, error.code);
+        throw error;
+      }
+    },
+    update: async (col: string, id: string, data: any) => {
+      try {
+        const { id: _, ...rest } = data;
+        const sanitized = sanitizeData(rest);
+        console.log(`Tentando atualizar documento ${id} em ${col}...`);
+        await updateDoc(doc(db, col, id), {
+          ...sanitized,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`Documento ${id} atualizado com sucesso em ${col}`);
+      } catch (error: any) {
+        console.error(`Erro ao atualizar em ${col}:`, error.message, error.code);
+        throw error;
+      }
+    },
+    remove: async (col: string, id: string) => {
+      return deleteDoc(doc(db, col, id));
+    },
+    set: async (col: string, id: string, data: any) => {
+      const { id: _, ...rest } = data;
+      const sanitized = sanitizeData(rest);
+      return setDoc(doc(db, col, id), {
+        ...sanitized,
+        updatedAt: serverTimestamp()
+      });
+    },
+    setClients,
+    setParts,
+    setTransactions,
+    setPdvOrders,
+    setServiceOrders,
+    setEquipment,
+    setSuppliers,
+    setMechanics,
+    setSellers,
+    setRentals,
+    setServices,
+    setFixedExpenses,
+    setSystemUsers,
+    setCompanyData
+  }), [sanitizeData]);
+
   useEffect(() => {
     const authTimeout = setTimeout(() => {
       if (!isAuthReady) {
@@ -146,7 +224,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
       clearTimeout(authTimeout);
     };
-  }, []);
+  }, [isAuthReady]);
 
   // Sync user profile when user or systemUsers data changes
   useEffect(() => {
@@ -199,7 +277,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       setIsAdmin(false);
       setIsAuthorized(false);
     }
-  }, [user, systemUsers, isAuthReady, isCreatingProfile]);
+  }, [user, systemUsers, isAuthReady, isCreatingProfile, hasLoadedUsers, actions]);
 
   // Test connection
   useEffect(() => {
@@ -300,84 +378,6 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await signOut(auth);
   };
-
-  const sanitizeData = (obj: any): any => {
-    if (obj === null || obj === undefined) return null;
-    if (typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) return obj.map(sanitizeData);
-    
-    // Evita sanitizar objetos que não são literais (como Timestamps do Firebase)
-    if (obj.constructor && obj.constructor.name !== 'Object') return obj;
-
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        sanitized[key] = sanitizeData(value);
-      }
-    }
-    return sanitized;
-  };
-
-  const actions = React.useMemo(() => ({
-    add: async (col: string, data: any) => {
-      try {
-        const { id, ...rest } = data;
-        const sanitized = sanitizeData(rest);
-        const finalData = {
-          ...sanitized,
-          createdAt: data.createdAt || new Date().toISOString(),
-          updatedAt: serverTimestamp()
-        };
-        console.log(`Tentando adicionar documento em ${col}...`);
-        const docRef = await addDoc(collection(db, col), finalData);
-        console.log(`Documento adicionado com sucesso em ${col}:`, docRef.id);
-        return docRef;
-      } catch (error: any) {
-        console.error(`Erro ao salvar em ${col}:`, error.message, error.code);
-        throw error;
-      }
-    },
-    update: async (col: string, id: string, data: any) => {
-      try {
-        const { id: _, ...rest } = data;
-        const sanitized = sanitizeData(rest);
-        console.log(`Tentando atualizar documento ${id} em ${col}...`);
-        await updateDoc(doc(db, col, id), {
-          ...sanitized,
-          updatedAt: serverTimestamp()
-        });
-        console.log(`Documento ${id} atualizado com sucesso em ${col}`);
-      } catch (error: any) {
-        console.error(`Erro ao atualizar em ${col}:`, error.message, error.code);
-        throw error;
-      }
-    },
-    remove: async (col: string, id: string) => {
-      return deleteDoc(doc(db, col, id));
-    },
-    set: async (col: string, id: string, data: any) => {
-      const { id: _, ...rest } = data;
-      const sanitized = sanitizeData(rest);
-      return setDoc(doc(db, col, id), {
-        ...sanitized,
-        updatedAt: serverTimestamp()
-      });
-    },
-    setClients,
-    setParts,
-    setTransactions,
-    setPdvOrders,
-    setServiceOrders,
-    setEquipment,
-    setSuppliers,
-    setMechanics,
-    setSellers,
-    setRentals,
-    setServices,
-    setFixedExpenses,
-    setSystemUsers,
-    setCompanyData
-  }), []);
 
   return (
     <FirebaseContext.Provider value={{ 
