@@ -117,11 +117,23 @@ export default function Parts({
     location: ''
   });
 
-  const filteredParts = parts.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.additionalCodes?.some(c => c.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredParts = (() => {
+    // 1. Remover duplicados por Código SKU
+    const uniqueList = parts.filter((item, index, self) => {
+      const code = item.code?.toUpperCase().trim();
+      if (!code) return true;
+      return index === self.findIndex((t) => (
+        t.code?.toUpperCase().trim() === code
+      ));
+    });
+
+    // 2. Filtrar por busca
+    return uniqueList.filter(p => 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.additionalCodes?.some(c => c.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  })();
 
   const handleOpenModal = (part?: Part) => {
     if (part) {
@@ -169,6 +181,25 @@ export default function Parts({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validar duplicidade (Código ou Nome)
+    const codeUpper = formData.code?.toUpperCase().trim();
+    const nameUpper = formData.name?.toUpperCase().trim();
+
+    const isDuplicate = parts.some(p => {
+      if (editingPart && p.id === editingPart.id) return false;
+      
+      const hasSameCode = codeUpper && p.code?.toUpperCase().trim() === codeUpper;
+      const hasSameName = nameUpper && p.name?.toUpperCase().trim() === nameUpper;
+      
+      return hasSameCode || hasSameName;
+    });
+
+    if (isDuplicate) {
+      alert('Erro: Já existe uma peça cadastrada com este Nome ou Código SKU.');
+      return;
+    }
+
     const finalData = {
       ...formData,
       additionalCodes: (formData.additionalCodes || []).map(c => c.trim()).filter(c => c !== '')

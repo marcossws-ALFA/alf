@@ -65,6 +65,7 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
   
   const [viewingEquipmentClient, setViewingEquipmentClient] = useState<Client | null>(null);
   const [viewingEquipmentOrders, setViewingEquipmentOrders] = useState<Equipment | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const generatePDF = (filter: string) => {
     const doc = new jsPDF();
@@ -167,9 +168,34 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
     e.target.value = ''; // Reset input
   };
 
-  const confirmImport = () => {
+  const confirmImport = async () => {
     const clientsToImport = pendingImportClients.filter(c => selectedImportIds.has(c.id));
-    setClients(prev => [...clientsToImport, ...prev]);
+    let importedCount = 0;
+    let skippedCount = 0;
+
+    for (const client of clientsToImport) {
+      const docClean = client.document?.replace(/\D/g, '');
+      const emailLower = client.email?.toLowerCase().trim();
+
+      const exists = clients.some(c => {
+        const hasSameEmail = emailLower && c.email?.toLowerCase().trim() === emailLower;
+        const hasSameDoc = docClean && c.document?.replace(/\D/g, '') === docClean;
+        return hasSameEmail || hasSameDoc;
+      });
+
+      if (!exists) {
+        try {
+          await actions.add('clients', client);
+          importedCount++;
+        } catch (e) {
+          console.error('Error importing client:', e);
+        }
+      } else {
+        skippedCount++;
+      }
+    }
+
+    alert(`Importação concluída: ${importedCount} novos clientes adicionados. ${skippedCount} ignorados por já existirem.`);
     setIsImportPreviewOpen(false);
     setPendingImportClients([]);
     setSelectedImportIds(new Set());
@@ -252,6 +278,24 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
   };
 
   const handleSaveClient = async (client: Client) => {
+    // Validar duplicidade (Email ou Documento)
+    const emailLower = client.email?.toLowerCase().trim();
+    const docClean = client.document?.replace(/\D/g, '');
+
+    const isDuplicate = clients.some(c => {
+      if (editingClient && c.id === editingClient.id) return false;
+      
+      const hasSameEmail = emailLower && c.email?.toLowerCase().trim() === emailLower;
+      const hasSameDoc = docClean && c.document?.replace(/\D/g, '') === docClean;
+      
+      return hasSameEmail || hasSameDoc;
+    });
+
+    if (isDuplicate) {
+      alert('Erro: Já existe um cliente cadastrado com este E-mail ou CPF/CNPJ.');
+      return;
+    }
+
     try {
       if (editingClient) {
         await actions.update('clients', editingClient.id, client);
@@ -284,6 +328,29 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
       }
     }
   };
+
+  const filteredClients = (() => {
+    // 1. Remover duplicados por Documento (CPF/CNPJ)
+    const uniqueList = clients.filter((item, index, self) => {
+      const doc = item.document?.replace(/\D/g, '');
+      if (!doc) return true;
+      return index === self.findIndex((t) => (
+        t.document?.replace(/\D/g, '') === doc
+      ));
+    });
+
+    // 2. Filtrar por Status e Busca
+    return uniqueList.filter(client => {
+      const matchesStatus = statusFilter === 'Todos' || client.status === statusFilter;
+      const matchesSearch = 
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (client.document && client.document.includes(searchTerm)) ||
+        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      return matchesStatus && matchesSearch;
+    });
+  })();
 
   return (
     <motion.div 
@@ -405,6 +472,16 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
           </div>
           <div className="flex items-center gap-3">
             <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input 
+                type="text"
+                placeholder="Buscar cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 pr-4 py-2 bg-[#f5f2fb] border-none rounded-lg text-xs font-bold focus:ring-2 focus:ring-[#000666]/10 outline-none w-64 transition-all"
+              />
+            </div>
+            <div className="relative">
               <button 
                 onClick={() => setIsDownloadMenuOpen(!isDownloadMenuOpen)}
                 className="p-2 text-slate-400 hover:text-[#000666] transition-colors bg-[#f5f2fb] rounded-lg flex items-center gap-2"
@@ -477,9 +554,7 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
               </tr>
             </thead>
             <tbody className="divide-y divide-[#c6c5d4]/10">
-              {clients
-                .filter(c => statusFilter === 'Todos' || c.status === statusFilter)
-                .map((client) => (
+              {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-[#f5f2fb]/30 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">

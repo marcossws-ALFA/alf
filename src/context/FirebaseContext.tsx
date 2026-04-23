@@ -103,6 +103,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [needsProfileUpdate, setNeedsProfileUpdate] = useState(false);
+  const [hasLoadedUsers, setHasLoadedUsers] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -149,23 +150,25 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 
   // Sync user profile when user or systemUsers data changes
   useEffect(() => {
+    const MASTER_ADMINS = ['alfamaqmanutencao@gmail.com', 'alfamaqmanutenção@gmail.com'];
+    
     if (user && !isCreatingProfile) {
       const profile = systemUsers.find(u => u.email === user.email);
       if (profile) {
         setUserProfile(profile);
-        setIsAdmin(profile.role === 'Admin' || user.email === 'alfamaqmanutencao@gmail.com');
-        setIsAuthorized(profile.status === 'Ativo');
+        const isMaster = MASTER_ADMINS.includes(user.email || '');
+        setIsAdmin(profile.role === 'Admin' || isMaster);
+        setIsAuthorized(profile.status === 'Ativo' || isMaster);
         // Verificar se faltam dados obrigatórios (exceto para o admin mestre se ele já estiver ativo)
         const isMissingData = !profile.cpf || !profile.phone || !profile.name;
-        setNeedsProfileUpdate(isMissingData && user.email !== 'alfamaqmanutencao@gmail.com');
-      } else if (isAuthReady) {
+        setNeedsProfileUpdate(isMissingData && !isMaster);
+      } else if (isAuthReady && hasLoadedUsers) {
         // Se a lista de usuários já carregou e não achou, pode ser um novo usuário
-        const adminEmail = 'alfamaqmanutencao@gmail.com';
         setIsCreatingProfile(true);
-        if (user.email === adminEmail) {
+        if (MASTER_ADMINS.includes(user.email || '')) {
           const newAdmin: SystemUser = {
             id: '',
-            name: user.displayName || 'Administrador',
+            name: 'ALFAMAQ MANUTENÇÕES',
             email: user.email!,
             role: 'Admin',
             status: 'Ativo',
@@ -244,6 +247,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       }),
       onSnapshot(collection(db, 'users'), (snapshot) => {
         setSystemUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SystemUser)));
+        setHasLoadedUsers(true);
       }),
       onSnapshot(collection(db, 'pdv_orders'), (snapshot) => {
         setPdvOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PDVOrder)));

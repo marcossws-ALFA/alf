@@ -103,14 +103,37 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
     }
   };
 
-  const filteredItems = (
-    activeTab === 'mechanics' ? mechanics : 
-    activeTab === 'sellers' ? sellers : 
-    activeTab === 'users' ? systemUsers : []
-  ).filter(item => 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.email && item.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredItems = (() => {
+    const rawList = (
+      activeTab === 'mechanics' ? mechanics : 
+      activeTab === 'sellers' ? sellers : 
+      activeTab === 'users' ? systemUsers : []
+    );
+
+    // Remover duplicados por e-mail antes de filtrar por busca
+    const uniqueList = rawList.filter((item, index, self) => {
+      if (!item.email) return true;
+      
+      const email = item.email.toLowerCase().trim();
+      // Normalizar e-mails admins master para serem tratados como o mesmo
+      const normalizedEmail = (email === 'alfamaqmanutencao@gmail.com' || email === 'alfamaqmanutenção@gmail.com') 
+        ? 'master_admin' 
+        : email;
+
+      return index === self.findIndex((t) => {
+        const tEmail = t.email?.toLowerCase().trim();
+        const tNormalized = (tEmail === 'alfamaqmanutencao@gmail.com' || tEmail === 'alfamaqmanutenção@gmail.com')
+          ? 'master_admin'
+          : tEmail;
+        return tNormalized === normalizedEmail;
+      });
+    });
+
+    return uniqueList.filter(item => 
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.email && item.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  })();
 
   const handleOpenModal = (item?: Mechanic | Seller | SystemUser) => {
     if (item) {
@@ -148,6 +171,28 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar duplicidade (apenas para novos registros ou mudança de email/cpf)
+    if (activeTab === 'users' || activeTab === 'mechanics' || activeTab === 'sellers') {
+      const emailLower = formData.email?.toLowerCase();
+      const cpfClean = formData.cpf?.replace(/\D/g, '');
+      
+      const listToCheck = activeTab === 'mechanics' ? mechanics : activeTab === 'sellers' ? sellers : systemUsers;
+      
+      const isDuplicateStatus = listToCheck.some((item: any) => {
+        if (editingItem && item.id === editingItem.id) return false;
+        
+        const hasSameEmail = item.email && emailLower && item.email.toLowerCase() === emailLower;
+        const hasSameCPF = cpfClean && item.cpf && item.cpf.replace(/\D/g, '') === cpfClean;
+        
+        return hasSameEmail || hasSameCPF;
+      });
+
+      if (isDuplicateStatus) {
+        alert('Erro: Já existe um cadastro com este E-mail ou CPF.');
+        return;
+      }
+    }
+
     try {
       if (activeTab === 'mechanics') {
         const newItem: any = {
@@ -358,7 +403,9 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
                       <div className="w-12 h-12 rounded-2xl bg-[#f5f2fb] flex items-center justify-center text-[#000666] shadow-sm">
                         <User size={24} />
                       </div>
-                      <p className="text-base font-black text-[#1b1b21]">{item.name}</p>
+                      <p className="text-base font-black text-[#1b1b21]">
+                        {(item.email === 'alfamaqmanutencao@gmail.com' || item.email === 'alfamaqmanutenção@gmail.com') ? 'ALFAMAQ MANUTENÇÕES' : item.name}
+                      </p>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -405,14 +452,14 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
                   <td className="px-8 py-6">
                     <span className={cn(
                       "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.15em]",
-                      item.status === 'Ativo' ? "bg-[#a0f399] text-[#005312]" : "bg-slate-100 text-slate-500"
+                      (item.status === 'Ativo' || item.email === 'alfamaqmanutencao@gmail.com' || item.email === 'alfamaqmanutenção@gmail.com') ? "bg-[#a0f399] text-[#005312]" : "bg-slate-100 text-slate-500"
                     )}>
-                      {item.status}
+                      {(item.status === 'Ativo' || item.email === 'alfamaqmanutencao@gmail.com' || item.email === 'alfamaqmanutenção@gmail.com') ? 'Ativo' : 'Inativo'}
                     </span>
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
-                      {activeTab === 'users' && (
+                      {activeTab === 'users' && item.email !== 'alfamaqmanutencao@gmail.com' && item.email !== 'alfamaqmanutenção@gmail.com' && (
                         <button 
                           onClick={async () => {
                             const newStatus = item.status === 'Ativo' ? 'Inativo' : 'Ativo';
@@ -440,7 +487,7 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
                       <button 
                         onClick={() => handleDelete(item.id)}
                         className="p-3 hover:bg-red-50 text-red-500 rounded-xl transition-all"
-                        disabled={item.email === 'alfamaqmanutencao@gmail.com'}
+                        disabled={item.email === 'alfamaqmanutencao@gmail.com' || item.email === 'alfamaqmanutenção@gmail.com'}
                       >
                         <Trash2 size={18} />
                       </button>
