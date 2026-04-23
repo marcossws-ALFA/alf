@@ -28,6 +28,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { Transaction, Client } from '@/src/types';
 import ClientFormModal from './ClientFormModal';
+import { useFirebase } from '@/src/context/FirebaseContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -43,6 +44,7 @@ interface ReceivablesProps {
 }
 
 export default function Receivables({ transactions, setTransactions, clients, setClients, onBack, onOpenOS, onOpenRental, onOpenSale }: ReceivablesProps) {
+  const { actions } = useFirebase();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'Todos' | 'Pago' | 'Pendente' | 'Vencido'>('Todos');
 
@@ -84,23 +86,34 @@ export default function Receivables({ transactions, setTransactions, clients, se
     notes: ''
   });
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTx) return;
 
-    setTransactions(prev => prev.map(t => 
-      t.id === editingTx.id 
-        ? { 
-            ...t, 
-            status: editFormData.status, 
-            dueDate: editFormData.dueDate,
-            paymentMethod: editFormData.paymentMethod,
-            notes: editFormData.notes,
-            paymentDate: editFormData.status === 'Pago' ? new Date().toLocaleDateString('pt-BR') : t.paymentDate
-          } 
-        : t
-    ));
-    setIsEditModalOpen(false);
+    try {
+      await actions.update('transactions', editingTx.id, { 
+        status: editFormData.status, 
+        dueDate: editFormData.dueDate,
+        paymentMethod: editFormData.paymentMethod,
+        notes: editFormData.notes,
+        paymentDate: editFormData.status === 'Pago' ? new Date().toLocaleDateString('pt-BR') : editingTx.paymentDate
+      });
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      alert('Erro ao salvar alteração.');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await actions.remove('transactions', id);
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('Erro ao excluir transação.');
+      }
+    }
   };
 
   const handleOpenMerge = (tx: Transaction) => {
@@ -119,7 +132,7 @@ export default function Receivables({ transactions, setTransactions, clients, se
     }
   };
 
-  const handleConfirmMerge = () => {
+  const handleConfirmMerge = async () => {
     if (mergingTxs.length < 2) return;
 
     const totalValue = mergingTxs.reduce((acc, t) => acc + t.value, 0);
@@ -127,55 +140,66 @@ export default function Receivables({ transactions, setTransactions, clients, se
     const baseDescription = firstTx.description.split(' - Parc.')[0];
     const baseMethod = firstTx.paymentMethod?.split(' (')[0] || 'Cartão';
 
-    const mergedTx: Transaction = {
-      ...firstTx,
-      id: Math.random().toString(36).substr(2, 9),
+    const mergedTx = {
       description: `${baseDescription} - Total Unificado`,
       value: totalValue,
       paymentMethod: baseMethod,
-      notes: `Parcelas unificadas em ${new Date().toLocaleDateString('pt-BR')}. Originais: ${mergingTxs.length} parcelas.`
+      type: firstTx.type,
+      category: firstTx.category,
+      entity: firstTx.entity,
+      date: new Date().toLocaleDateString('pt-BR'),
+      dueDate: firstTx.dueDate,
+      status: 'Pendente' as const,
+      notes: `Parcelas unificadas em ${new Date().toLocaleDateString('pt-BR')}. Originais: ${mergingTxs.length} parcelas.`,
+      referenceId: firstTx.referenceId
     };
 
-    const mergingIds = new Set(mergingTxs.map(t => t.id));
-    
-    setTransactions(prev => [
-      mergedTx,
-      ...prev.filter(t => !mergingIds.has(t.id))
-    ]);
-
-    setIsMergeModalOpen(false);
-    setMergingTxs([]);
+    try {
+      await actions.add('transactions', mergedTx);
+      for (const t of mergingTxs) {
+        await actions.remove('transactions', t.id);
+      }
+      setIsMergeModalOpen(false);
+      setMergingTxs([]);
+    } catch (error) {
+      console.error('Error merging transactions:', error);
+      alert('Erro ao unificar parcelas.');
+    }
   };
 
-  const handleAddTransaction = (e: React.FormEvent) => {
+  const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newTx: Transaction = {
-      id: Math.random().toString(36).substr(2, 9),
+    const newTx = {
       description: addFormData.description,
       entity: addFormData.entity,
       value: parseFloat(addFormData.value.replace(',', '.')),
       date: new Date().toLocaleDateString('pt-BR'),
       dueDate: addFormData.dueDate,
       category: addFormData.category,
-      type: 'Receita',
+      type: 'Receita' as const,
       status: addFormData.status,
       paymentMethod: addFormData.paymentMethod,
       notes: addFormData.notes,
       paymentDate: addFormData.status === 'Pago' ? new Date().toLocaleDateString('pt-BR') : undefined
     };
 
-    setTransactions(prev => [newTx, ...prev]);
-    setIsAddModalOpen(false);
-    setAddFormData({
-      description: '',
-      entity: '',
-      value: '',
-      dueDate: new Date().toLocaleDateString('pt-BR'),
-      category: 'Serviços',
-      status: 'Pendente',
-      paymentMethod: 'Dinheiro',
-      notes: ''
-    });
+    try {
+      await actions.add('transactions', newTx);
+      setIsAddModalOpen(false);
+      setAddFormData({
+        description: '',
+        entity: '',
+        value: '',
+        dueDate: new Date().toLocaleDateString('pt-BR'),
+        category: 'Serviços',
+        status: 'Pendente',
+        paymentMethod: 'Dinheiro',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Erro ao adicionar transação.');
+    }
   };
 
   const handleSaveNewClient = (newClient: Client) => {
@@ -445,8 +469,15 @@ export default function Receivables({ transactions, setTransactions, clients, se
                           <Combine size={16} />
                         </button>
                       )}
-                      <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-all">
-                        <MoreVertical size={16} />
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(tx.id);
+                        }}
+                        className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-all"
+                        title="Excluir"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </td>

@@ -35,6 +35,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { Transaction, Client, Supplier } from '@/src/types';
+import { useFirebase } from '@/src/context/FirebaseContext';
 
 interface FinanceProps {
   transactions: Transaction[];
@@ -45,6 +46,7 @@ interface FinanceProps {
 }
 
 export default function Finance({ transactions, setTransactions, suppliers, clients, onViewChange }: FinanceProps) {
+  const { actions } = useFirebase();
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<Transaction | null>(null);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -133,23 +135,29 @@ export default function Finance({ transactions, setTransactions, suppliers, clie
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingTransaction) {
-      setTransactions(transactions.map(t => t.id === editingTransaction.id ? { ...t, ...formData } as Transaction : t));
-    } else {
-      const newTx: Transaction = {
-        ...formData,
-        id: Math.random().toString(36).substring(2, 11),
-      } as Transaction;
-      setTransactions([newTx, ...transactions]);
+    try {
+      if (editingTransaction) {
+        await actions.update('transactions', editingTransaction.id, formData);
+      } else {
+        await actions.add('transactions', formData);
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      alert('Erro ao salvar transação.');
     }
-    setIsModalOpen(false);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta transação?')) {
-      setTransactions(transactions.filter(t => t.id !== id));
+      try {
+        await actions.remove('transactions', id);
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('Erro ao excluir transação.');
+      }
     }
   };
 
@@ -377,13 +385,19 @@ export default function Finance({ transactions, setTransactions, suppliers, clie
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
                       <button 
-                        onClick={() => handleOpenModal(tx)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenModal(tx);
+                        }}
                         className="p-1.5 hover:bg-[#000666]/10 text-[#000666] rounded-lg transition-all"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button 
-                        onClick={() => handleDelete(tx.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(tx.id);
+                        }}
                         className="p-1.5 hover:bg-[#ba1a1a]/10 text-[#ba1a1a] rounded-lg transition-all"
                       >
                         <Trash2 size={16} />

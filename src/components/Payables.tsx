@@ -32,6 +32,7 @@ import { Transaction, Supplier, FixedExpense, ServiceOrder, Mechanic, Seller } f
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import SupplierFormModal from './SupplierFormModal';
+import { useFirebase } from '@/src/context/FirebaseContext';
 import XMLImportPayableModal from './XMLImportPayableModal';
 
 interface PayablesProps {
@@ -61,6 +62,7 @@ export default function Payables({
   onBack, 
   onOpenOS 
 }: PayablesProps) {
+  const { actions } = useFirebase();
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<'Todos' | 'Pago' | 'Pendente' | 'Vencido'>('Todos');
   const [activeTab, setActiveTab] = React.useState<'lancamentos' | 'fixas' | 'comissoes'>('lancamentos');
@@ -129,51 +131,66 @@ export default function Payables({
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingTx) return;
 
-    setTransactions(prev => prev.map(t => 
-      t.id === editingTx.id 
-        ? { 
-            ...t, 
-            status: editFormData.status, 
-            dueDate: editFormData.dueDate,
-            notes: editFormData.notes,
-            paymentDate: editFormData.status === 'Pago' ? new Date().toLocaleDateString('pt-BR') : t.paymentDate
-          } 
-        : t
-    ));
-    setIsEditModalOpen(false);
+    try {
+      await actions.update('transactions', editingTx.id, { 
+        status: editFormData.status, 
+        dueDate: editFormData.dueDate,
+        notes: editFormData.notes,
+        paymentDate: editFormData.status === 'Pago' ? new Date().toLocaleDateString('pt-BR') : editingTx.paymentDate
+      });
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      alert('Erro ao salvar alteração.');
+    }
   };
 
-  const handleAddTransaction = (e: React.FormEvent) => {
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta transação?')) {
+      try {
+        await actions.remove('transactions', id);
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('Erro ao excluir transação.');
+      }
+    }
+  };
+
+  const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newTx: Transaction = {
-      id: Math.random().toString(36).substr(2, 9),
+    const newTx = {
       description: addFormData.description,
       entity: addFormData.entity,
       value: parseFloat(addFormData.value.replace(',', '.')),
       date: new Date().toLocaleDateString('pt-BR'),
       dueDate: addFormData.dueDate,
       category: addFormData.category,
-      type: 'Despesa',
+      type: 'Despesa' as const,
       status: addFormData.status,
       notes: addFormData.notes,
       paymentDate: addFormData.status === 'Pago' ? new Date().toLocaleDateString('pt-BR') : undefined
     };
 
-    setTransactions(prev => [newTx, ...prev]);
-    setIsAddModalOpen(false);
-    setAddFormData({
-      description: '',
-      entity: '',
-      value: '',
-      dueDate: new Date().toLocaleDateString('pt-BR'),
-      category: 'Fornecedores',
-      status: 'Pendente',
-      notes: ''
-    });
+    try {
+      await actions.add('transactions', newTx);
+      setIsAddModalOpen(false);
+      setAddFormData({
+        description: '',
+        entity: '',
+        value: '',
+        dueDate: new Date().toLocaleDateString('pt-BR'),
+        category: 'Fornecedores',
+        status: 'Pendente',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Erro ao adicionar transação.');
+    }
   };
 
   const handleSaveNewSupplier = (supplier: Supplier) => {
@@ -436,9 +453,14 @@ export default function Payables({
     alert(`${newTxs.length} contas fixas lançadas com sucesso para o mês atual.`);
   };
 
-  const handleDeleteFixed = (id: string) => {
+  const handleDeleteFixed = async (id: string) => {
     if (confirm('Tem certeza que deseja remover esta conta fixa?')) {
-      setFixedExpenses(prev => prev.filter(f => f.id !== id));
+      try {
+        await actions.remove('fixed_expenses', id);
+      } catch (error) {
+        console.error('Error deleting fixed expense:', error);
+        alert('Erro ao excluir conta fixa.');
+      }
     }
   };
 
@@ -764,8 +786,15 @@ export default function Payables({
                           >
                             <Edit2 size={16} />
                           </button>
-                          <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-all">
-                            <MoreVertical size={16} />
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(tx.id);
+                            }}
+                            className="p-2 hover:bg-[#ba1a1a]/10 text-[#ba1a1a] rounded-lg transition-all"
+                            title="Excluir"
+                          >
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
