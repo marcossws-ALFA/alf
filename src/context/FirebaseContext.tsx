@@ -74,20 +74,7 @@ interface FirebaseContextType {
     update: (col: string, id: string, data: any) => Promise<void>;
     remove: (col: string, id: string) => Promise<void>;
     set: (col: string, id: string, data: any) => Promise<void>;
-    setClients: React.Dispatch<React.SetStateAction<Client[]>>;
-    setParts: React.Dispatch<React.SetStateAction<Part[]>>;
-    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-    setPdvOrders: React.Dispatch<React.SetStateAction<PDVOrder[]>>;
-    setServiceOrders: React.Dispatch<React.SetStateAction<ServiceOrder[]>>;
-    setEquipment: React.Dispatch<React.SetStateAction<Equipment[]>>;
-    setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
-    setMechanics: React.Dispatch<React.SetStateAction<Mechanic[]>>;
-    setSellers: React.Dispatch<React.SetStateAction<Seller[]>>;
-    setRentals: React.Dispatch<React.SetStateAction<Rental[]>>;
-    setServices: React.Dispatch<React.SetStateAction<Service[]>>;
-    setFixedExpenses: React.Dispatch<React.SetStateAction<FixedExpense[]>>;
-    setSystemUsers: React.Dispatch<React.SetStateAction<SystemUser[]>>;
-    setCompanyData: React.Dispatch<React.SetStateAction<CompanyData | null>>;
+    setCompanyData: (data: CompanyData | null) => Promise<void>;
   };
 }
 
@@ -123,7 +110,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const sanitizeData = React.useCallback((obj: any): any => {
     if (obj === null || obj === undefined) return null;
     if (typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) return obj.map(sanitizeData);
+    if (Array.isArray(obj)) return obj.map(v => sanitizeData(v));
     
     // Evita sanitizar objetos que não são literais (como Timestamps do Firebase)
     if (obj.constructor && obj.constructor.name !== 'Object') return obj;
@@ -172,30 +159,28 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       }
     },
     remove: async (col: string, id: string) => {
+      console.log(`Tentando remover documento ${id} em ${col}...`);
       return deleteDoc(doc(db, col, id));
     },
     set: async (col: string, id: string, data: any) => {
       const { id: _, ...rest } = data;
       const sanitized = sanitizeData(rest);
+      console.log(`Tentando definir documento ${id} em ${col}...`);
       return setDoc(doc(db, col, id), {
         ...sanitized,
         updatedAt: serverTimestamp()
       });
     },
-    setClients,
-    setParts,
-    setTransactions,
-    setPdvOrders,
-    setServiceOrders,
-    setEquipment,
-    setSuppliers,
-    setMechanics,
-    setSellers,
-    setRentals,
-    setServices,
-    setFixedExpenses,
-    setSystemUsers,
-    setCompanyData
+    setCompanyData: async (data: CompanyData | null) => {
+      if (!data) return;
+      const { id, ...rest } = data;
+      const sanitized = sanitizeData(rest);
+      console.log('Salvando configurações da empresa...');
+      return setDoc(doc(db, 'company', 'settings'), {
+        ...sanitized,
+        updatedAt: serverTimestamp()
+      });
+    }
   }), [sanitizeData]);
 
   useEffect(() => {

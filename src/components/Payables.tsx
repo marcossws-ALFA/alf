@@ -193,10 +193,15 @@ export default function Payables({
     }
   };
 
-  const handleSaveNewSupplier = (supplier: Supplier) => {
-    setSuppliers(prev => [supplier, ...prev]);
-    setAddFormData(prev => ({ ...prev, entity: supplier.name }));
-    setIsSupplierModalOpen(false);
+  const handleSaveNewSupplier = async (supplier: Supplier) => {
+    try {
+      await actions.add('suppliers', supplier);
+      setAddFormData(prev => ({ ...prev, entity: supplier.name }));
+      setIsSupplierModalOpen(false);
+    } catch (error) {
+      console.error('Erro ao salvar fornecedor:', error);
+      alert('Erro ao persistir fornecedor no banco de dados.');
+    }
   };
 
   const handleImportXML = (e: React.ChangeEvent<HTMLInputElement>) => {
