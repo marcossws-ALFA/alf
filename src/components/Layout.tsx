@@ -64,6 +64,23 @@ export default function Layout({
 
   const mainMenuItems = menuItems.filter(item => !item.adminOnly || isAdmin || userProfile?.role === 'Gerente');
 
+  const viewLabels: Record<View, string> = {
+    'dashboard': 'Dashboard',
+    'pdv': 'PDV / Vendas',
+    'service-orders': 'Ordens de Serviço',
+    'clients': 'Clientes',
+    'equipment': 'Equipamentos',
+    'parts': 'Peças / Estoque',
+    'services': 'Serviços',
+    'finance': 'Financeiro',
+    'receivables': 'Contas a Receber',
+    'payables': 'Contas a Pagar',
+    'suppliers': 'Fornecedores',
+    'settings': 'Configurações',
+    'rentals': 'Locação',
+    'support': 'Suporte'
+  };
+
   return (
     <div className="flex h-screen bg-[#fbf8ff]">
       {/* Sidebar */}
@@ -161,12 +178,12 @@ export default function Layout({
         <header className="h-20 bg-white border-b border-[#c6c5d4]/10 flex items-center justify-between px-8 z-10 shrink-0">
           <div className="flex flex-col">
             <h2 className="text-xl font-black text-[#1b1b21] tracking-tight capitalize leading-tight">
-              {currentView.replace('-', ' ')}
+              {viewLabels[currentView] || currentView}
             </h2>
             <div className="flex items-center gap-2 text-slate-400">
               <span className="text-[10px] font-bold uppercase tracking-widest">Portal</span>
               <span className="text-[8px] opacity-30">•</span>
-              <span className="text-[10px] font-bold uppercase tracking-widest">{currentView}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest">{viewLabels[currentView] || currentView}</span>
             </div>
           </div>
 

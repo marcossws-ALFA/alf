@@ -14,8 +14,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Service Portal CRM",
-  description: "Management Suite for Service Orders and Assets",
+  title: "Alfamaq CRM",
+  description: "Sistema de Gestão de Ordens de Serviço e Ativos",
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="antialiased">
         <FirebaseProvider>
           {children}
