@@ -526,41 +526,41 @@ export default function Parts({
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {[
           { label: 'Total de Itens', value: parts.length, icon: Package, color: 'text-[#000666] bg-[#000666]/10' },
           { label: 'Estoque Baixo', value: parts.filter(p => p.stock <= p.minStock).length, icon: AlertTriangle, color: 'text-[#ba1a1a] bg-[#ba1a1a]/10' },
           { label: 'Valor Total', value: `R$ ${parts.reduce((acc, p) => acc + (p.price * p.stock), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: 'text-[#217128] bg-[#a0f399]/30' },
           { label: 'Categorias', value: new Set(parts.map(p => p.category)).size, icon: Tag, color: 'text-[#1b6d24] bg-[#1b6d24]/10' },
         ].map((metric, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-transparent hover:border-[#c6c5d4]/15 transition-all">
-            <div className="flex items-center gap-3 mb-2">
-              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", metric.color)}>
-                <metric.icon size={20} />
+          <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-transparent hover:border-[#c6c5d4]/15 transition-all">
+            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 text-slate-500">
+              <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center", metric.color)}>
+                <metric.icon size={18} className="sm:w-5 sm:h-5" />
               </div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{metric.label}</span>
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">{metric.label}</span>
             </div>
-            <p className="text-2xl font-black text-[#1b1b21]">{metric.value}</p>
+            <p className="text-xl sm:text-2xl font-black text-[#1b1b21]">{metric.value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
             placeholder="Buscar por nome ou código..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm focus:ring-2 focus:ring-[#000666]/10 outline-none transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-white border border-[#c6c5d4]/20 rounded-2xl text-sm focus:ring-2 focus:ring-[#000666]/10 outline-none transition-all shadow-sm"
           />
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <div className="flex items-center bg-white rounded-xl px-3 py-2 border border-[#c6c5d4]/20 flex-1 md:w-64">
+        <div className="flex gap-2 w-full md:w-64">
+          <div className="flex items-center bg-white rounded-2xl px-4 py-3 border border-[#c6c5d4]/20 flex-1 shadow-sm">
             <Filter className="text-slate-400 mr-2" size={18} />
-            <select className="bg-transparent border-none focus:ring-0 text-xs w-full text-[#1b1b21] font-semibold outline-none">
+            <select className="bg-transparent border-none text-xs w-full text-[#1b1b21] font-bold outline-none cursor-pointer">
               <option>Todas as Categorias</option>
               <option>Mecânica</option>
               <option>Elétrica</option>
@@ -570,9 +570,10 @@ export default function Parts({
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table / Cards */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#c6c5d4]/10">
-        <div className="overflow-x-auto">
+        {/* Desktop View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f5f2fb]">
@@ -588,7 +589,7 @@ export default function Parts({
                 <tr key={part.id} className="hover:bg-[#f5f2fb]/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#efecf5] overflow-hidden flex items-center justify-center relative">
+                      <div className="w-10 h-10 rounded-lg bg-[#efecf5] overflow-hidden flex items-center justify-center relative shadow-sm border border-white">
                         {part.image ? (
                           <Image 
                             src={part.image} 
@@ -650,16 +651,78 @@ export default function Parts({
                   </td>
                 </tr>
               ))}
+              {filteredParts.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold">Nenhum item encontrado.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+
+        {/* Mobile View */}
+        <div className="lg:hidden p-4 space-y-4 divide-y divide-slate-100 bg-white">
+          {filteredParts.map((part) => (
+            <div key={part.id} className="pt-4 first:pt-0 pb-4 last:pb-0 flex flex-col gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#f5f2fb] overflow-hidden flex items-center justify-center shrink-0 shadow-sm border border-white relative">
+                  {part.image ? (
+                    <Image src={part.image} alt={part.name} fill className="object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <Package size={24} className="text-[#8690ee]" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-[#1b1b21] leading-tight mb-1 truncate">{part.name}</p>
+                  <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">{part.code}</span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="px-2 py-0.5 bg-[#eae7ef] text-[#000666] text-[9px] font-black uppercase rounded-md">{part.category}</span>
+                    {part.stock <= part.minStock && (
+                      <span className="px-2 py-0.5 bg-[#ffdad6] text-[#ba1a1a] text-[9px] font-black uppercase rounded-md">Estoque Baixo</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Preço Sugerido</span>
+                  <span className="text-lg font-black text-[#000666]">R$ {part.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estoque</span>
+                  <span className={cn("text-base font-black", part.stock <= part.minStock ? "text-red-500" : "text-[#1b1b21]")}>{part.stock} un</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button 
+                  onClick={() => handleOpenModal(part)}
+                  className="flex-1 py-3 bg-[#f5f2fb] text-[#000666] rounded-xl font-bold text-xs hover:bg-[#e0e0ff] transition-all flex items-center justify-center gap-2"
+                >
+                  <Edit2 size={14} /> Editar
+                </button>
+                <button 
+                  onClick={() => handleDelete(part.id)}
+                  className="px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold text-xs hover:bg-red-100 transition-all flex items-center justify-center"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))}
+          {filteredParts.length === 0 && (
+            <div className="py-12 text-center text-slate-400 font-bold">Nenhum item disponível.</div>
+          )}
+        </div>
+
         <div className="px-6 py-4 flex items-center justify-between bg-white border-t border-[#c6c5d4]/10">
-          <span className="text-xs text-slate-500 font-medium">Exibindo {filteredParts.length} de {parts.length} peças</span>
+          <span className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest">Total: {filteredParts.length}</span>
           <div className="flex gap-2">
-            <button className="p-2 rounded-lg bg-[#f5f2fb] text-[#1b1b21] disabled:opacity-50">
+            <button className="p-2 rounded-xl bg-[#f5f2fb] text-[#1b1b21] disabled:opacity-50 hover:bg-slate-200 transition-all">
               <ChevronLeft size={18} />
             </button>
-            <button className="p-2 rounded-lg bg-[#f5f2fb] text-[#1b1b21]">
+            <button className="p-2 rounded-xl bg-[#f5f2fb] text-[#1b1b21] hover:bg-slate-200 transition-all">
               <ChevronRight size={18} />
             </button>
           </div>

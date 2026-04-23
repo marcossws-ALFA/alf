@@ -35,7 +35,8 @@ import {
   CreditCard,
   DollarSign,
   Package,
-  FileDown
+  FileDown,
+  ClipboardList
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
@@ -787,9 +788,10 @@ export default function ServiceOrders({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-[#c6c5d4]/10">
-        <div className="overflow-x-auto">
+      {/* Table / List View */}
+      <div className="bg-white rounded-xl shadow-sm border border-[#c6c5d4]/10 overflow-hidden">
+        {/* Desktop Table View */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="bg-[#f5f2fb] border-b border-[#c6c5d4]/20">
@@ -911,6 +913,90 @@ export default function ServiceOrders({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile List View (Cards) */}
+        <div className="lg:hidden divide-y divide-slate-100">
+          {orders
+            .filter(order => {
+              const search = osSearchTerm.toLowerCase();
+              const matchesSearch = (
+                order.number.toLowerCase().includes(search) ||
+                order.clientName.toLowerCase().includes(search) ||
+                order.clientDocument.toLowerCase().includes(search) ||
+                order.clientPhone.toLowerCase().includes(search)
+              );
+              const matchesStatus = statusFilter === 'TODOS' || order.status === statusFilter;
+              return matchesSearch && matchesStatus;
+            })
+            .map((order) => (
+              <div key={order.id} className="p-4 space-y-4 bg-white active:bg-slate-50 transition-colors">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-mono text-[#000666] font-bold">#{order.number}</span>
+                    <span className="text-sm font-black text-[#1b1b21]">{order.clientName}</span>
+                    <span className="text-[10px] text-slate-500">{order.equipmentName}</span>
+                  </div>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                    order.status === 'CONCLUIDO' ? "bg-[#a0f399] text-[#005312]" : 
+                    order.status === 'AGUARDANDO APROVAÇÃO' ? "bg-[#ffdbcf] text-[#802a00]" : 
+                    order.status === 'NÃO APROVADO' ? "bg-[#ffdad6] text-[#93000a]" :
+                    "bg-[#e0e0ff] text-[#343d96]"
+                  )}>
+                    {order.status}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-end border-t border-slate-50 pt-3">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <Calendar size={12} />
+                      <span className="text-[10px] font-medium">{order.createdAt}</span>
+                    </div>
+                    <div className="text-sm font-black text-[#000666]">{order.total}</div>
+                  </div>
+                  
+                  <div className="flex gap-1.5">
+                    <button 
+                      onClick={() => handleOpenModal(order)}
+                      className="p-2 bg-[#f5f2fb] text-[#000666] rounded-xl hover:bg-[#e0e0ff] transition-all"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const client = clients.find(c => c.id === order.clientId);
+                        const equip = equipment.find(e => e.id === order.equipmentId);
+                        if (client) {
+                          const doc = generateOSPDF(order, client, equip);
+                          doc.save(`OS_${order.number}.pdf`);
+                        }
+                      }}
+                      className="p-2 bg-[#f5f2fb] text-[#000666] rounded-xl hover:bg-[#e0e0ff] transition-all"
+                    >
+                      <Download size={16} />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setOrderToDelete(order.id);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          }
+          {orders.length === 0 && (
+            <div className="p-12 text-center text-slate-400">
+              <ClipboardList size={48} className="mx-auto mb-4 opacity-20" />
+              <p className="text-sm font-bold">Nenhuma ordem de serviço encontrada.</p>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

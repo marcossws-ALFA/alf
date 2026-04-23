@@ -179,16 +179,16 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
       {/* Global Search Section */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-[#c6c5d4]/15 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-[#f5f2fb] rounded-full -mr-24 -mt-24 sm:-mr-32 sm:-mt-32 opacity-50"></div>
-        <div className="relative z-10 max-w-2xl mx-auto text-center space-y-4 sm:space-y-6">
-          <h3 className="text-xl sm:text-2xl font-black text-[#1b1b21]">O que você está procurando hoje?</h3>
-          <p className="text-slate-500 text-xs sm:text-sm">Pesquise por clientes, ordens de serviço, equipamentos ou peças em todo o sistema.</p>
+        <div className="relative z-10 max-w-2xl mx-auto text-center space-y-3 sm:space-y-6">
+          <h3 className="text-lg sm:text-2xl font-black text-[#1b1b21]">O que você está procurando?</h3>
+          <p className="text-slate-500 text-[10px] sm:text-sm">Pesquise clientes, ordens, equipamentos ou peças.</p>
           
           <div className="relative group">
             <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-[#000666] group-focus-within:scale-110 transition-transform sm:w-6 sm:h-6 w-5 h-5" />
             <input 
               type="text" 
-              placeholder="Digite sua busca aqui..." 
-              className="w-full pl-12 sm:pl-14 pr-6 py-4 sm:py-5 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-base sm:text-lg font-medium focus:bg-white focus:border-[#000666]/10 focus:ring-4 focus:ring-[#000666]/5 transition-all outline-none shadow-inner"
+              placeholder="Pesquisar..." 
+              className="w-full pl-11 sm:pl-14 pr-6 py-3 sm:py-5 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm sm:text-lg font-medium focus:bg-white focus:border-[#000666]/10 focus:ring-4 focus:ring-[#000666]/5 transition-all outline-none shadow-inner"
             />
           </div>
         </div>

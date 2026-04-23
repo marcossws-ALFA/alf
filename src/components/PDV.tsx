@@ -513,37 +513,37 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
   }, [pdvOrders, activeTab]);
 
   return (
-    <div className="flex flex-col gap-6 h-[calc(100vh-12rem)]">
+    <div className="flex flex-col gap-4 lg:gap-6 lg:h-[calc(100vh-12rem)]">
       {/* PDV Header Tabs */}
-      <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-[#c6c5d4]/10 w-fit">
+      <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-[#c6c5d4]/10 w-fit self-center lg:self-start overflow-x-auto max-w-full no-scrollbar">
         <button
           onClick={() => setActiveTab('venda')}
           className={cn(
-            "px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
+            "px-4 lg:px-6 py-2.5 rounded-xl text-[10px] lg:text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap",
             activeTab === 'venda' ? "bg-[#000666] text-white shadow-lg shadow-[#000666]/20" : "text-slate-500 hover:bg-slate-50"
           )}
         >
-          <ShoppingCart size={18} />
+          <ShoppingCart size={16} className="shrink-0" />
           Nova Venda
         </button>
         <button
           onClick={() => setActiveTab('vendas')}
           className={cn(
-            "px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
+            "px-4 lg:px-6 py-2.5 rounded-xl text-[10px] lg:text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap",
             activeTab === 'vendas' ? "bg-[#000666] text-white shadow-lg shadow-[#000666]/20" : "text-slate-500 hover:bg-slate-50"
           )}
         >
-          <History size={18} />
+          <History size={16} className="shrink-0" />
           Vendas
         </button>
         <button
           onClick={() => setActiveTab('orcamentos')}
           className={cn(
-            "px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2",
+            "px-4 lg:px-6 py-2.5 rounded-xl text-[10px] lg:text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap",
             activeTab === 'orcamentos' ? "bg-[#000666] text-white shadow-lg shadow-[#000666]/20" : "text-slate-500 hover:bg-slate-50"
           )}
         >
-          <FileText size={18} />
+          <FileText size={16} className="shrink-0" />
           Orçamentos
         </button>
       </div>
@@ -558,16 +558,16 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
             className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden"
           >
             {/* Left Side: Search and Items */}
-            <div className="flex-1 flex flex-col gap-6 overflow-hidden">
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#c6c5d4]/10">
+            <div className="flex-1 flex flex-col gap-4 lg:gap-6 overflow-hidden">
+              <div className="bg-white p-4 lg:p-6 rounded-3xl shadow-sm border border-[#c6c5d4]/10">
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                   <input 
                     type="text" 
-                    placeholder="Pesquisar produto ou serviço (nome ou código)..." 
+                    placeholder="Buscar produto ou serviço..." 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 bg-[#f5f2fb] border-none rounded-2xl text-lg font-medium text-[#1b1b21] placeholder:text-slate-400 focus:ring-2 focus:ring-[#000666]/5 outline-none transition-all"
+                    className="w-full pl-12 pr-4 py-3 lg:py-4 bg-[#f5f2fb] border-none rounded-2xl text-base lg:text-lg font-medium text-[#1b1b21] placeholder:text-slate-400 focus:ring-2 focus:ring-[#000666]/5 outline-none transition-all"
                   />
                 </div>
 
@@ -577,7 +577,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="mt-4 max-h-96 overflow-y-auto divide-y divide-[#c6c5d4]/10"
+                      className="mt-4 max-h-96 overflow-y-auto divide-y divide-[#c6c5d4]/10 scrollbar-thin scrollbar-thumb-slate-200"
                     >
                       {filteredItems.map((item) => (
                         <button 
@@ -585,33 +585,33 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                           onClick={() => addToCart(item as any, item.type)}
                           className="w-full flex items-center justify-between p-4 hover:bg-[#f5f2fb] transition-colors text-left group"
                         >
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-3 lg:gap-4">
                             <div className={cn(
                               "p-2 rounded-xl",
                               item.type === 'part' ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"
                             )}>
-                              {item.type === 'part' ? <Package size={20} /> : <Wrench size={20} />}
+                              {item.type === 'part' ? <Package size={18} /> : <Wrench size={18} />}
                             </div>
                             <div>
-                              <p className="font-bold text-[#1b1b21]">{item.name}</p>
-                              <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
+                              <p className="font-bold text-[#1b1b21] text-sm lg:text-base">{item.name}</p>
+                              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
                                 {item.type === 'part' ? `Estoque: ${(item as Part).stock}` : 'Serviço'} • {item.code}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <p className="font-black text-[#000666]">
+                          <div className="flex items-center gap-2 lg:gap-4">
+                            <p className="font-black text-[#000666] text-sm lg:text-base">
                               R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
-                            <div className="p-2 bg-[#000666] text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-                              <Plus size={16} />
+                            <div className="p-1.5 bg-[#000666] text-white rounded-lg lg:opacity-0 lg:group-hover:opacity-100 transition-all">
+                              <Plus size={14} />
                             </div>
                           </div>
                         </button>
                       ))}
                       {filteredItems.length === 0 && (
                         <div className="p-8 text-center text-slate-400">
-                          <p>Nenhum item encontrado para &quot;{searchTerm}&quot;</p>
+                          <p className="text-sm">Nenhum item encontrado para &quot;{searchTerm}&quot;</p>
                         </div>
                       )}
                     </motion.div>
@@ -619,41 +619,41 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                 </AnimatePresence>
               </div>
 
-              <div className="flex-1 bg-white rounded-3xl shadow-sm border border-[#c6c5d4]/10 p-6 flex flex-col items-center justify-center text-slate-400 text-center">
+              <div className="flex-1 bg-white rounded-3xl shadow-sm border border-[#c6c5d4]/10 p-6 lg:p-12 flex flex-col items-center justify-center text-slate-400 text-center min-h-[200px]">
                 <div className="p-6 bg-[#f5f2fb] rounded-full mb-4">
                   <ShoppingCart size={48} className="text-slate-300" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-500 mb-2">PDV Pronto para Venda</h3>
-                <p className="max-w-xs">Use a barra de pesquisa acima para adicionar produtos e serviços ao carrinho.</p>
+                <h3 className="text-xl font-bold text-slate-500 mb-2">PDV Pronto</h3>
+                <p className="max-w-xs text-sm">Adicione produtos e serviços para iniciar uma venda ou orçamento.</p>
               </div>
             </div>
 
             {/* Right Side: Cart */}
-            <div className="w-full lg:w-96 flex flex-col gap-6">
+            <div className="w-full lg:w-96 flex flex-col gap-4 lg:gap-6 h-[400px] lg:h-auto">
               <div className="flex-1 bg-white rounded-3xl shadow-sm border border-[#c6c5d4]/10 flex flex-col overflow-hidden">
-                <div className="p-6 border-b border-[#c6c5d4]/10 flex items-center justify-between bg-[#f5f2fb]/50">
+                <div className="p-4 lg:p-6 border-b border-[#c6c5d4]/10 flex items-center justify-between bg-[#f5f2fb]/50">
                   <div className="flex items-center gap-2">
-                    <ShoppingCart size={20} className="text-[#000666]" />
-                    <h3 className="font-bold text-[#1b1b21]">Carrinho</h3>
+                    <ShoppingCart size={18} className="text-[#000666]" />
+                    <h3 className="font-bold text-[#1b1b21] text-sm lg:text-base">Carrinho</h3>
                   </div>
-                  <span className="px-2 py-1 bg-[#000666] text-white text-[10px] font-black rounded-full">
+                  <span className="px-2 py-0.5 bg-[#000666] text-white text-[9px] lg:text-[10px] font-black rounded-full">
                     {cart.reduce((acc, i) => acc + i.quantity, 0)} ITENS
                   </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-3 lg:p-4 space-y-2 lg:space-y-3 scrollbar-thin scrollbar-thumb-slate-200">
                   {cart.map((item) => (
-                    <div key={`${item.type}-${item.id}`} className="p-3 bg-[#f5f2fb]/50 rounded-2xl border border-[#c6c5d4]/5 flex flex-col gap-3">
+                    <div key={`${item.type}-${item.id}`} className="p-3 bg-[#f5f2fb]/50 rounded-2xl border border-[#c6c5d4]/5 flex flex-col gap-2 lg:gap-3">
                       <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-[#1b1b21] line-clamp-1">{item.name}</p>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs lg:text-sm font-bold text-[#1b1b21] truncate">{item.name}</p>
+                          <p className="text-[9px] lg:text-[10px] text-slate-500 font-bold uppercase tracking-wider">
                             R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} / un
                           </p>
                         </div>
                         <button 
                           onClick={() => removeFromCart(item.id, item.type)}
-                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
+                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors shrink-0"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -664,17 +664,17 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                             onClick={() => updateQuantity(item.id, item.type, -1)}
                             className="p-1 hover:bg-slate-50 rounded text-slate-500"
                           >
-                            <Minus size={12} />
+                            <Minus size={10} />
                           </button>
-                          <span className="w-8 text-center text-xs font-black text-[#000666]">{item.quantity}</span>
+                          <span className="w-6 lg:w-8 text-center text-[10px] lg:text-xs font-black text-[#000666]">{item.quantity}</span>
                           <button 
                             onClick={() => updateQuantity(item.id, item.type, 1)}
                             className="p-1 hover:bg-slate-50 rounded text-slate-500"
                           >
-                            <Plus size={12} />
+                            <Plus size={10} />
                           </button>
                         </div>
-                        <p className="text-sm font-black text-[#000666]">
+                        <p className="text-xs lg:text-sm font-black text-[#000666]">
                           R$ {(item.price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
@@ -682,21 +682,21 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                   ))}
                   {cart.length === 0 && (
                     <div className="h-full flex flex-col items-center justify-center text-slate-300 py-10">
-                      <ShoppingCart size={32} className="mb-2 opacity-20" />
-                      <p className="text-xs font-bold uppercase tracking-widest">Carrinho Vazio</p>
+                      <ShoppingCart size={32} className="mb-2 opacity-10" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Carrinho Vazio</p>
                     </div>
                   )}
                 </div>
 
-                <div className="p-6 bg-[#f5f2fb]/80 border-t border-[#c6c5d4]/10 space-y-4">
-                  <div className="space-y-2">
+                <div className="p-4 lg:p-6 bg-[#f5f2fb]/80 border-t border-[#c6c5d4]/10 space-y-3 lg:space-y-4">
+                  <div className="space-y-1 lg:space-y-2">
                     <div className="flex justify-between text-slate-500">
-                      <span className="text-xs font-bold uppercase tracking-widest">Subtotal</span>
-                      <span className="text-sm font-bold">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-[10px] lg:text-sm font-bold uppercase tracking-widest">Subtotal</span>
+                      <span className="text-xs lg:text-sm font-bold">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between items-center pt-2 border-t border-[#c6c5d4]/10">
-                      <span className="text-sm font-black text-[#1b1b21] uppercase tracking-widest">Total</span>
-                      <span className="text-2xl font-black text-[#000666]">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-xs lg:text-sm font-black text-[#1b1b21] uppercase tracking-widest">Total</span>
+                      <span className="text-xl lg:text-2xl font-black text-[#000666]">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
 
@@ -706,10 +706,10 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                       setSellerError(false);
                       setIsCheckoutModalOpen(true);
                     }}
-                    className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold shadow-lg shadow-[#000666]/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
+                    className="w-full py-3 lg:py-4 bg-[#000666] text-white rounded-2xl font-bold shadow-lg shadow-[#000666]/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 text-xs lg:text-base"
                   >
-                    Finalizar Venda/Orçamento
-                    <ArrowRight size={18} />
+                    Finalizar
+                    <ArrowRight size={16} />
                   </button>
                 </div>
               </div>
@@ -723,22 +723,23 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
             exit={{ opacity: 0, x: 20 }}
             className="flex-1 bg-white rounded-3xl shadow-sm border border-[#c6c5d4]/10 overflow-hidden flex flex-col"
           >
-            <div className="p-6 border-b border-[#c6c5d4]/10 bg-[#f5f2fb]/50 flex items-center justify-between">
+            <div className="p-4 lg:p-6 border-b border-[#c6c5d4]/10 bg-[#f5f2fb]/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-[#000666] text-white rounded-xl">
-                  {activeTab === 'vendas' ? <History size={20} /> : <FileText size={20} />}
+                  {activeTab === 'vendas' ? <History size={18} /> : <FileText size={18} />}
                 </div>
-                <h3 className="text-xl font-bold text-[#000666]">
-                  {activeTab === 'vendas' ? 'Vendas Realizadas' : 'Orçamentos Salvos'}
+                <h3 className="text-base lg:text-xl font-bold text-[#000666]">
+                  {activeTab === 'vendas' ? 'Vendas' : 'Orçamentos'}
                 </h3>
               </div>
-              <span className="px-3 py-1 bg-[#000666]/10 text-[#000666] text-xs font-black rounded-full">
+              <span className="px-3 py-1 bg-[#000666]/10 text-[#000666] text-[10px] lg:text-xs font-black rounded-full">
                 {displayedOrders.length} {activeTab === 'vendas' ? 'VENDAS' : 'ORÇAMENTOS'}
               </span>
             </div>
 
             <div className="flex-1 overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              {/* Desktop View */}
+              <table className="hidden lg:table w-full text-left border-collapse">
                 <thead className="bg-[#f5f2fb]/30">
                   <tr>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Nº Pedido</th>
@@ -797,22 +798,72 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                               className="p-2 bg-amber-500 text-white rounded-lg hover:scale-105 transition-all flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider"
                             >
                               <FileText size={12} />
-                              Retornar Orçamento
+                              Retornar
                             </button>
                           )}
+                          <button 
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsOrderDetailOpen(true);
+                            }}
+                            className="p-2 bg-[#f5f2fb] text-[#000666] rounded-lg hover:bg-white transition-all"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
                   ))}
-                  {displayedOrders.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="px-6 py-20 text-center text-slate-400 italic">
-                        Nenhum registro encontrado.
-                      </td>
-                    </tr>
-                  )}
                 </tbody>
               </table>
+
+              {/* Mobile View */}
+              <div className="lg:hidden flex-1 overflow-y-auto divide-y divide-slate-100">
+                {displayedOrders.map((order) => (
+                  <div 
+                    key={order.id} 
+                    onClick={() => openOrderDetails(order)}
+                    className="p-4 space-y-3 bg-white active:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-black text-[#000666]">Pedido #{order.number}</span>
+                        <span className="text-sm font-black text-[#1b1b21]">{order.clientName}</span>
+                        <span className="text-[10px] text-slate-500">{order.date}</span>
+                      </div>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-widest",
+                        order.status === 'Finalizado' ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
+                      )}>
+                        {order.status}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between border-t border-slate-50 pt-2">
+                      <div className="text-sm font-black text-[#000666]">
+                        R$ {order.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </div>
+                      <div className="flex gap-2">
+                        {order.status === 'Orçamento' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); convertQuoteToSale(order); }}
+                            className="p-2 bg-[#000666] text-white rounded-lg text-[9px] font-black uppercase"
+                          >
+                            Faturar
+                          </button>
+                        )}
+                        <ChevronRight size={18} className="text-slate-300" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {displayedOrders.length === 0 && (
+                  <div className="p-12 text-center text-slate-400">
+                    <History size={48} className="mx-auto mb-4 opacity-10" />
+                    <p className="text-sm font-bold uppercase tracking-widest">Nenhum registro encontrado</p>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
@@ -833,42 +884,40 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-6 border-b border-[#c6c5d4]/10 flex items-center justify-between bg-[#f5f2fb]">
+              <div className="p-4 lg:p-6 border-b border-[#c6c5d4]/10 flex items-center justify-between bg-[#f5f2fb]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-[#000666] text-white rounded-xl">
-                    <CheckCircle2 size={20} />
+                    <CheckCircle2 size={18} className="lg:size-5" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#000666]">Finalizar Venda/Orçamento</h3>
+                  <h3 className="text-base lg:text-xl font-bold text-[#000666]">Finalizar</h3>
                 </div>
                 <button onClick={() => setIsCheckoutModalOpen(false)} className="p-2 hover:bg-white rounded-xl transition-all">
-                  <X size={24} className="text-slate-400" />
+                  <X size={20} className="text-slate-400" />
                 </button>
               </div>
 
-              <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest text-[#000666]/50">Número do Pedido (Automático)</label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      value={customNumber}
-                      readOnly
-                      className="w-full px-4 py-3 bg-[#f5f2fb] border-none rounded-xl text-sm font-black text-[#000666] opacity-70 cursor-not-allowed outline-none"
-                    />
-                  </div>
+              <div className="flex-1 p-4 lg:p-8 space-y-4 lg:space-y-6 overflow-y-auto">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Número do Pedido</label>
+                  <input 
+                    type="text" 
+                    value={customNumber}
+                    readOnly
+                    className="w-full px-4 py-2.5 bg-[#f5f2fb] border-none rounded-xl text-xs lg:text-sm font-black text-[#000666] opacity-70 outline-none"
+                  />
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Cliente (Opcional)</label>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cliente</label>
                     <button 
                       onClick={() => setIsNewClientModalOpen(true)}
-                      className="text-[10px] font-black text-[#000666] uppercase tracking-widest hover:underline flex items-center gap-1"
+                      className="text-[9px] font-black text-[#000666] uppercase tracking-widest flex items-center gap-1"
                     >
-                      <Plus size={12} />
-                      Novo Cliente
+                      <Plus size={10} />
+                      Novo
                     </button>
                   </div>
                   <select 
@@ -877,7 +926,7 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                       const client = clients.find(c => c.id === e.target.value);
                       setSelectedClient(client || null);
                     }}
-                    className="w-full px-4 py-3 bg-[#f5f2fb] border-none rounded-xl text-sm font-bold text-[#1b1b21] focus:ring-2 focus:ring-[#000666]/10 outline-none appearance-none"
+                    className="w-full px-4 py-2.5 bg-[#f5f2fb] border-none rounded-xl text-xs lg:text-sm font-bold text-[#1b1b21] outline-none"
                   >
                     <option value="">Cliente Consumidor</option>
                     {clients.map(c => (
@@ -886,10 +935,8 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                   </select>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                    Vendedor <span className="text-red-500">*</span>
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Vendedor <span className="text-red-500">*</span></label>
                   <select 
                     value={selectedSellerId}
                     onChange={(e) => {
@@ -897,22 +944,21 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                       setSellerError(false);
                     }}
                     className={cn(
-                      "w-full px-4 py-3 bg-[#f5f2fb] border-none rounded-xl text-sm font-bold text-[#1b1b21] focus:ring-2 outline-none appearance-none",
-                      sellerError ? "ring-2 ring-red-500" : "focus:ring-[#000666]/10"
+                      "w-full px-4 py-2.5 bg-[#f5f2fb] border-none rounded-xl text-xs lg:text-sm font-bold text-[#1b1b21] outline-none",
+                      sellerError && "ring-1 ring-red-500"
                     )}
                   >
-                    <option value="">Selecione o Vendedor</option>
+                    <option value="">Selecione</option>
                     {sellers.map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
                   </select>
-                  {sellerError && <p className="text-[10px] text-red-500 font-bold">Por favor, selecione um vendedor.</p>}
                 </div>
 
                 {/* Payment Method 1 */}
-                <div className="space-y-4 p-4 bg-[#f5f2fb]/50 rounded-2xl border border-[#c6c5d4]/10">
-                  <h4 className="text-[10px] font-black text-[#000666] uppercase tracking-widest">Método de Pagamento 1</h4>
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-3 p-3 lg:p-4 bg-[#f5f2fb]/50 rounded-2xl border border-[#c6c5d4]/10">
+                  <h4 className="text-[9px] font-black text-[#000666] uppercase tracking-widest">Pagamento 1</h4>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5">
                     {(['PIX', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Boleto', 'Transferência'] as const).map((method) => (
                       <button
                         key={method}
@@ -921,10 +967,10 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                           if (!method.includes('Cartão') && method !== 'Boleto') setInstallments(1);
                         }}
                         className={cn(
-                          "py-3 rounded-xl text-[10px] font-bold transition-all border-2",
+                          "py-2 rounded-lg text-[9px] font-bold transition-all border",
                           paymentMethod === method 
                             ? "bg-[#000666] text-white border-[#000666]" 
-                            : "bg-white text-slate-500 border-slate-100 hover:border-[#000666]/20"
+                            : "bg-white text-slate-500 border-slate-100"
                         )}
                       >
                         {method}
@@ -932,9 +978,9 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor</label>
+                  <div className="flex flex-col lg:flex-row gap-3">
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Valor</label>
                       <input 
                         type="text"
                         value={paidAmount1}
@@ -943,193 +989,54 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                           const amount = parseInt(digits || '0') / 100;
                           setPaidAmount1(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount));
                         }}
-                        placeholder={`R$ ${subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
-                        className="w-full px-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm font-bold text-[#000666] outline-none"
+                        className="w-full px-3 py-2 bg-white border border-[#c6c5d4]/20 rounded-lg text-xs font-bold text-[#000666]"
                       />
                     </div>
                     {(paymentMethod === 'Cartão de Crédito' || paymentMethod === 'Boleto') && (
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Parcelas</label>
-                        {paymentMethod === 'Boleto' ? (
-                          <select 
-                            value={installments}
-                            onChange={(e) => setInstallments(e.target.value)}
-                            className="w-full px-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm font-bold text-[#1b1b21] outline-none"
-                          >
-                            <option value="1">1x (À vista)</option>
-                            <option value="7 dias">7 dias</option>
-                            <option value="14 dias">14 dias</option>
-                            <option value="21 dias">21 dias</option>
-                            <option value="28 dias">28 dias</option>
-                            <option value="30 dias">30 dias</option>
-                            <option value="45 dias">45 dias</option>
-                            <option value="20/40">20/40</option>
-                            <option value="21/42">21/42</option>
-                            <option value="28/56">28/56</option>
-                            <option value="28/56/84">28/56/84</option>
-                            <option value="30/60">30/60</option>
-                            <option value="30/60/90">30/60/90</option>
-                            <option value="2">2x</option>
-                            <option value="3">3x</option>
-                            <option value="4">4x</option>
-                            <option value="5">5x</option>
-                            <option value="6">6x</option>
-                            <option value="10">10x</option>
-                            <option value="12">12x</option>
-                          </select>
-                        ) : (
-                          <select 
-                            value={installments}
-                            onChange={(e) => setInstallments(Number(e.target.value))}
-                            className="w-full px-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm font-bold text-[#1b1b21] outline-none"
-                          >
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
-                              <option key={n} value={n}>{n}x</option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Payment Method 2 */}
-                {paymentMethod2 === 'Nenhum' ? (
-                  <button 
-                    onClick={() => setPaymentMethod2('PIX')}
-                    className="w-full py-3 border-2 border-dashed border-[#c6c5d4]/40 rounded-2xl text-xs font-bold text-slate-400 hover:border-[#000666]/20 hover:text-[#000666] transition-all flex items-center justify-center gap-2"
-                  >
-                    <Plus size={16} />
-                    Adicionar Segundo Método
-                  </button>
-                ) : (
-                  <div className="space-y-4 p-4 bg-[#f5f2fb]/50 rounded-2xl border border-[#c6c5d4]/10 relative">
-                    <button 
-                      onClick={() => {
-                        setPaymentMethod2('Nenhum');
-                        setPaidAmount2('');
-                      }}
-                      className="absolute top-2 right-2 p-1 text-slate-300 hover:text-red-500 transition-colors"
-                    >
-                      <X size={14} />
-                    </button>
-                    <h4 className="text-[10px] font-black text-[#000666] uppercase tracking-widest">Método de Pagamento 2</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(['PIX', 'Dinheiro', 'Cartão de Crédito', 'Cartão de Débito', 'Boleto', 'Transferência'] as const).map((method) => (
-                        <button
-                          key={method}
-                          onClick={() => {
-                            setPaymentMethod2(method);
-                            if (!method.includes('Cartão') && method !== 'Boleto') setInstallments2(1);
-                          }}
-                          className={cn(
-                            "py-3 rounded-xl text-[10px] font-bold transition-all border-2",
-                            paymentMethod2 === method 
-                              ? "bg-[#000666] text-white border-[#000666]" 
-                              : "bg-white text-slate-500 border-slate-100 hover:border-[#000666]/20"
-                          )}
+                      <div className="flex-1 space-y-1.5">
+                        <label className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Parcelas</label>
+                        <select 
+                          value={installments}
+                          onChange={(e) => setInstallments(isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value))}
+                          className="w-full px-3 py-2 bg-white border border-[#c6c5d4]/20 rounded-lg text-xs font-bold"
                         >
-                          {method}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor</label>
-                        <input 
-                          type="text"
-                          value={paidAmount2}
-                          onChange={(e) => {
-                            const digits = e.target.value.replace(/\D/g, '');
-                            const amount = parseInt(digits || '0') / 100;
-                            setPaidAmount2(new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount));
-                          }}
-                          placeholder="R$ 0,00"
-                          className="w-full px-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm font-bold text-[#000666] outline-none"
-                        />
-                      </div>
-                    {(paymentMethod2 === 'Cartão de Crédito' || paymentMethod2 === 'Boleto') && (
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Parcelas</label>
-                        {paymentMethod2 === 'Boleto' ? (
-                          <select 
-                            value={installments2}
-                            onChange={(e) => setInstallments2(e.target.value)}
-                            className="w-full px-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm font-bold text-[#1b1b21] outline-none"
-                          >
-                            <option value="1">1x (À vista)</option>
-                            <option value="7 dias">7 dias</option>
-                            <option value="14 dias">14 dias</option>
-                            <option value="21 dias">21 dias</option>
-                            <option value="28 dias">28 dias</option>
-                            <option value="30 dias">30 dias</option>
-                            <option value="45 dias">45 dias</option>
-                            <option value="20/40">20/40</option>
-                            <option value="21/42">21/42</option>
-                            <option value="28/56">28/56</option>
-                            <option value="28/56/84">28/56/84</option>
-                            <option value="30/60">30/60</option>
-                            <option value="30/60/90">30/60/90</option>
-                            <option value="2">2x</option>
-                            <option value="3">3x</option>
-                            <option value="4">4x</option>
-                            <option value="5">5x</option>
-                            <option value="6">6x</option>
-                            <option value="10">10x</option>
-                            <option value="12">12x</option>
-                          </select>
-                        ) : (
-                          <select 
-                            value={installments2}
-                            onChange={(e) => setInstallments2(Number(e.target.value))}
-                            className="w-full px-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm font-bold text-[#1b1b21] outline-none"
-                          >
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
-                              <option key={n} value={n}>{n}x</option>
-                            ))}
-                          </select>
-                        )}
+                          {paymentMethod === 'Boleto' ? (
+                            <>
+                              <option value="1">1x</option>
+                              <option value="7 dias">7d</option>
+                              <option value="15 dias">15d</option>
+                              <option value="30 dias">30d</option>
+                              <option value="28/56/84">28/56/84</option>
+                            </>
+                          ) : (
+                            [1,2,3,4,5,6,10,12].map(n => <option key={n} value={n}>{n}x</option>)
+                          )}
+                        </select>
                       </div>
                     )}
-                    </div>
                   </div>
-                )}
-
-                <div className="p-6 bg-[#f5f2fb] rounded-2xl space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total a Pagar</span>
-                    <span className="text-2xl font-black text-[#000666]">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  {paymentMethod2 !== 'Nenhum' && (
-                    <div className="pt-2 border-t border-[#c6c5d4]/10 space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                        <span>RESTANTE</span>
-                        <span className={cn(
-                          (subtotal - (parseFloat(paidAmount1.replace(/[^\d,]/g, '').replace(',', '.') || subtotal.toString()) + parseFloat(paidAmount2.replace(/[^\d,]/g, '').replace(',', '.') || '0'))) === 0 ? "text-green-500" : "text-red-500"
-                        )}>
-                          R$ {(subtotal - (parseFloat(paidAmount1.replace(/[^\d,]/g, '').replace(',', '.') || subtotal.toString()) + parseFloat(paidAmount2.replace(/[^\d,]/g, '').replace(',', '.') || '0'))).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <button 
-                    onClick={() => handleFinalizeSale('Orçamento')}
-                    className="w-full py-4 bg-white text-[#000666] border-2 border-[#000666] rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#f5f2fb] transition-all"
-                  >
-                    Salvar Orçamento
-                    <FileText size={18} />
-                  </button>
-                  <button 
-                    onClick={() => handleFinalizeSale('Finalizado')}
-                    className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold shadow-lg shadow-[#000666]/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                  >
-                    Confirmar Venda
-                    <CheckCircle2 size={18} />
-                  </button>
+                {/* Totals and Buttons */}
+                <div className="p-4 bg-[#000666] rounded-2xl text-white space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold uppercase opacity-60">Total</span>
+                    <span className="text-xl lg:text-2xl font-black">R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
+                    <button 
+                      onClick={() => handleFinalizeSale('Orçamento')}
+                      className="py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-bold uppercase transition-all"
+                    >
+                      Orçamento
+                    </button>
+                    <button 
+                      onClick={() => handleFinalizeSale('Finalizado')}
+                      className="py-2.5 bg-white text-[#000666] rounded-xl text-[10px] font-black uppercase shadow-lg transition-all"
+                    >
+                      Vender
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -1229,60 +1136,50 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-6 border-b border-[#c6c5d4]/10 flex items-center justify-between bg-[#f5f2fb]">
+              <div className="p-4 lg:p-6 border-b border-[#c6c5d4]/10 flex items-center justify-between bg-[#f5f2fb]">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-[#000666] text-white rounded-xl">
-                    <Receipt size={20} />
+                    <Receipt size={18} className="lg:size-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-[#000666]">Pedido #{selectedOrder.number}</h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{selectedOrder.date}</p>
+                    <h3 className="text-sm lg:text-xl font-bold text-[#000666]">Pedido #{selectedOrder.number}</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{selectedOrder.date}</p>
                   </div>
                 </div>
                 <button onClick={() => {
                   setIsOrderDetailOpen(false);
                   if (onModalClose) onModalClose();
                 }} className="p-2 hover:bg-white rounded-xl transition-all">
-                  <X size={24} className="text-slate-400" />
+                  <X size={20} className="text-slate-400" />
                 </button>
               </div>
 
-              <div className="p-6 overflow-y-auto space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-[#f5f2fb] rounded-2xl">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
-                    <p className="font-bold text-[#1b1b21]">{selectedOrder.clientName}</p>
+              <div className="flex-1 p-4 lg:p-6 overflow-y-auto space-y-4 lg:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+                  <div className="p-3 bg-[#f5f2fb] rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
+                    <p className="text-xs lg:text-sm font-bold text-[#1b1b21]">{selectedOrder.clientName}</p>
                   </div>
-                  <div className="p-4 bg-[#f5f2fb] rounded-2xl">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                  <div className="p-3 bg-[#f5f2fb] rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
                     <span className={cn(
-                      "px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                      "px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest",
                       selectedOrder.status === 'Finalizado' ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"
                     )}>
                       {selectedOrder.status}
                     </span>
                   </div>
-                  {selectedOrder.sellerName && (
-                    <div className="p-4 bg-[#f5f2fb] rounded-2xl">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vendedor</p>
-                      <p className="font-bold text-[#1b1b21]">{selectedOrder.sellerName}</p>
-                    </div>
-                  )}
-                  <div className="p-4 bg-[#f5f2fb] rounded-2xl">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pagamento</p>
-                    <p className="font-bold text-[#1b1b21]">{selectedOrder.paymentMethod}</p>
-                  </div>
-                  <div className="p-4 bg-[#f5f2fb] rounded-2xl">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
-                    <p className="font-black text-[#000666]">R$ {selectedOrder.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div className="p-3 bg-[#f5f2fb] rounded-2xl">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                    <p className="text-sm lg:text-base font-black text-[#000666]">R$ {selectedOrder.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3">Itens do Pedido</h4>
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 lg:mb-3">Itens</h4>
                   <div className="space-y-2">
                     {selectedOrder.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-white border border-[#c6c5d4]/10 rounded-xl">
+                      <div key={idx} className="flex items-center justify-between p-2.5 lg:p-3 bg-white border border-[#c6c5d4]/10 rounded-xl">
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             "p-1.5 rounded-lg",
@@ -1290,14 +1187,14 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                           )}>
                             {item.type === 'part' ? <Package size={14} /> : <Wrench size={14} />}
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-[#1b1b21]">{item.name}</p>
-                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                          <div className="min-w-0">
+                            <p className="text-[11px] lg:text-sm font-bold text-[#1b1b21] truncate">{item.name}</p>
+                            <p className="text-[9px] lg:text-[10px] text-slate-500 font-bold">
                               {item.quantity}x R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </p>
                           </div>
                         </div>
-                        <p className="text-sm font-black text-[#000666]">
+                        <p className="text-[11px] lg:text-sm font-black text-[#000666]">
                           R$ {(item.price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
@@ -1306,17 +1203,17 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                 </div>
               </div>
 
-              <div className="p-6 border-t border-[#c6c5d4]/10 bg-[#f5f2fb]/50 flex justify-end gap-3">
+              <div className="p-4 lg:p-6 border-t border-[#c6c5d4]/10 bg-[#f5f2fb]/50 flex flex-col sm:flex-row justify-end gap-2 lg:gap-3">
                 {selectedOrder.status === 'Orçamento' ? (
                   <button 
                     onClick={() => {
                       convertQuoteToSale(selectedOrder);
                       setIsOrderDetailOpen(false);
                     }}
-                    className="px-6 py-3 bg-[#000666] text-white rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-all"
+                    className="w-full sm:w-auto px-6 py-3 bg-[#000666] text-white rounded-xl text-xs lg:text-sm font-bold flex items-center justify-center gap-2 hover:scale-105 transition-all text-center"
                   >
-                    <CheckCircle2 size={18} />
-                    Faturar Agora
+                    <CheckCircle2 size={16} />
+                    Faturar
                   </button>
                 ) : (
                   <button 
@@ -1324,20 +1221,18 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
                       revertSaleToQuote(selectedOrder);
                       setIsOrderDetailOpen(false);
                     }}
-                    className="px-6 py-3 bg-amber-500 text-white rounded-xl font-bold flex items-center gap-2 hover:scale-105 transition-all"
+                    className="w-full sm:w-auto px-6 py-3 bg-amber-500 text-white rounded-xl text-xs lg:text-sm font-bold flex items-center justify-center gap-2 hover:scale-105 transition-all text-center"
                   >
-                    <FileText size={18} />
-                    Retornar para Orçamento
+                    <FileText size={16} />
+                    Retornar
                   </button>
                 )}
                 <button 
-                  onClick={() => {
-                    setIsOrderDetailOpen(false);
-                    if (onModalClose) onModalClose();
-                  }}
-                  className="px-6 py-3 bg-white text-slate-500 border border-[#c6c5d4]/20 rounded-xl font-bold hover:bg-slate-50 transition-all"
+                  onClick={() => handleDownload(selectedOrder)}
+                  className="w-full sm:w-auto px-6 py-3 bg-[#f5f2fb] text-[#000666] rounded-xl text-xs lg:text-sm font-bold flex items-center justify-center gap-2 hover:bg-white transition-all border border-[#c6c5d4]/10 text-center"
                 >
-                  Fechar
+                  <Download size={16} />
+                  PDF
                 </button>
               </div>
             </motion.div>
