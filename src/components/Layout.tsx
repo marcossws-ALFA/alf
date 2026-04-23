@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   LayoutDashboard, 
   ShoppingCart, 
@@ -74,9 +75,21 @@ export default function Layout({
       >
         {/* Logo */}
         <div className="p-6 flex items-center gap-3">
-          <div className="bg-[#000666] p-2.5 rounded-xl shadow-lg shadow-[#000666]/20">
-            <Building2 className="text-white" size={24} />
-          </div>
+          {companyData.logoUrl ? (
+            <div className="relative w-10 h-10 shrink-0">
+              <Image 
+                src={companyData.logoUrl} 
+                alt="Logo" 
+                fill 
+                className="object-contain" 
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          ) : (
+            <div className="bg-[#000666] p-2.5 rounded-xl shadow-lg shadow-[#000666]/20">
+              <Building2 className="text-white" size={24} />
+            </div>
+          )}
           {!isSidebarCollapsed && (
             <div className="flex flex-col overflow-hidden">
               <span className="font-black text-[#000666] text-lg tracking-tight truncate leading-tight">

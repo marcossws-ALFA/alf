@@ -17,8 +17,9 @@ import Rentals from '@/src/components/Rentals';
 import PDV from '@/src/components/PDV';
 import { View, Equipment as EquipmentType, Client, ServiceOrder, Part, Service, Transaction, Supplier, FixedExpense, Mechanic, Seller, SystemUser, PDVOrder, Rental, CompanyData } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
-import { LogIn, QrCode } from 'lucide-react';
+import { LogIn, QrCode, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import Image from 'next/image';
 
 const initialCompanyData: CompanyData = {
   companyName: 'ALFAMAQ MANUTENÇÃO',
@@ -35,10 +36,47 @@ const initialCompanyData: CompanyData = {
 };
 
 export default function Home() {
-  const { user, loading, isAuthReady, login, logout, data, actions, isAuthorized, isAdmin, userProfile } = useFirebase();
+  const { user, loading, isAuthReady, login, logout, data, actions, isAuthorized, isAdmin, userProfile, needsProfileUpdate } = useFirebase();
   const [currentView, setCurrentView] = useState<View>('dashboard');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  // Estados para o formulário de perfil
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    cpf: '',
+    phone: ''
+  });
+
+  useEffect(() => {
+    if (user && userProfile) {
+      setProfileForm({
+        name: userProfile.name || user.displayName || '',
+        cpf: userProfile.cpf || '',
+        phone: userProfile.phone || ''
+      });
+    }
+  }, [user, userProfile]);
+
+  const maskCPF = (v: string) => v.replace(/\D/g, '').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})/, '$1-$2').replace(/(-\d{2})\d+?$/, '$1');
+  const maskPhone = (v: string) => v.replace(/\D/g, '').replace(/^(\d{2})(\d)/g, '($1) $2').replace(/(\d)(\d{4})$/, '$1-$2');
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userProfile) return;
+    try {
+      await actions.update('users', userProfile.id, {
+        name: profileForm.name,
+        cpf: profileForm.cpf,
+        phone: profileForm.phone,
+        status: userProfile.status === 'Ativo' ? 'Ativo' : 'Inativo' // Mantém o status atual
+      });
+      alert('Cadastro atualizado! Aguarde a liberação do acesso.');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Erro ao atualizar perfil.');
+    }
+  };
   
   // Ensure we have some company data even if Firestore is empty
   const companyData = data.companyData || initialCompanyData;
@@ -78,10 +116,22 @@ export default function Home() {
           className="w-full max-w-md bg-white p-8 rounded-3xl shadow-2xl shadow-[#000666]/10 border border-[#c6c5d4]/20"
         >
           <div className="text-center mb-8">
-            <div className="bg-[#000666] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#000666]/20">
-              <QrCode className="text-white" size={32} />
-            </div>
-            <h1 className="text-2xl font-black text-[#000666]">Portal Alfamaq</h1>
+            {companyData.logoUrl ? (
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                <Image 
+                  src={companyData.logoUrl} 
+                  alt="Logo" 
+                  fill 
+                  className="object-contain" 
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <div className="bg-[#000666] w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-[#000666]/20">
+                <QrCode className="text-white" size={32} />
+              </div>
+            )}
+            <h1 className="text-2xl font-black text-[#000666]">{companyData.tradeName}</h1>
             <p className="text-slate-500 font-medium">Gestão de Serviços e Ativos</p>
           </div>
 
@@ -110,6 +160,93 @@ export default function Home() {
     );
   }
 
+  if (needsProfileUpdate) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#fbf8ff] p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md bg-white p-10 rounded-[40px] shadow-2xl shadow-[#000666]/10 border border-[#c6c5d4]/20 space-y-8"
+        >
+          <div className="text-center space-y-2">
+            {companyData.logoUrl ? (
+              <div className="relative w-20 h-20 mx-auto mb-2">
+                <Image 
+                  src={companyData.logoUrl} 
+                  alt="Logo" 
+                  fill 
+                  className="object-contain" 
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-[#000666]/5 text-[#000666] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <LogIn size={32} />
+              </div>
+            )}
+            <h2 className="text-2xl font-black text-[#000666]">Complete seu Cadastro</h2>
+            <p className="text-slate-500 font-medium text-sm">
+              Para sua segurança, precisamos de alguns dados adicionais no seu primeiro acesso.
+            </p>
+          </div>
+
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
+              <input 
+                required
+                type="text"
+                value={profileForm.name}
+                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                className="w-full px-5 py-4 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm font-bold text-[#1b1b21] focus:bg-white focus:border-[#000666]/10 outline-none transition-all"
+                placeholder="Seu nome completo"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">CPF</label>
+              <input 
+                required
+                type="text"
+                value={profileForm.cpf}
+                onChange={(e) => setProfileForm({ ...profileForm, cpf: maskCPF(e.target.value) })}
+                className="w-full px-5 py-4 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm font-bold text-[#1b1b21] focus:bg-white focus:border-[#000666]/10 outline-none transition-all"
+                placeholder="000.000.000-00"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Celular / WhatsApp</label>
+              <input 
+                required
+                type="text"
+                value={profileForm.phone}
+                onChange={(e) => setProfileForm({ ...profileForm, phone: maskPhone(e.target.value) })}
+                className="w-full px-5 py-4 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm font-bold text-[#1b1b21] focus:bg-white focus:border-[#000666]/10 outline-none transition-all"
+                placeholder="(00) 00000-0000"
+              />
+            </div>
+
+            <button 
+              type="submit"
+              className="w-full py-4 bg-[#000666] text-white rounded-2xl font-black shadow-xl shadow-[#000666]/20 hover:scale-[1.02] active:scale-95 transition-all mt-4"
+            >
+              Finalizar Cadastro
+            </button>
+
+            <button
+              onClick={logout}
+              type="button"
+              className="w-full py-3 text-slate-400 text-xs font-bold hover:text-red-500 transition-colors"
+            >
+              Cancelar e Sair
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
+
   if (!isAuthorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fbf8ff] p-4">
@@ -118,9 +255,21 @@ export default function Home() {
           animate={{ opacity: 1, scale: 1 }}
           className="w-full max-w-md bg-white p-10 rounded-[40px] shadow-2xl shadow-[#000666]/10 border border-[#c6c5d4]/20 text-center space-y-6"
         >
-          <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
-            <QrCode size={40} />
-          </div>
+          {companyData.logoUrl ? (
+            <div className="relative w-24 h-24 mx-auto mb-2">
+              <Image 
+                src={companyData.logoUrl} 
+                alt="Logo" 
+                fill 
+                className="object-contain" 
+                referrerPolicy="no-referrer"
+              />
+            </div>
+          ) : (
+            <div className="w-20 h-20 bg-amber-100 text-amber-600 rounded-3xl flex items-center justify-center mx-auto shadow-inner">
+              <QrCode size={40} />
+            </div>
+          )}
           
           <div className="space-y-2">
             <h2 className="text-2xl font-black text-[#000666]">Acesso em Análise</h2>

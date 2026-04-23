@@ -48,6 +48,7 @@ interface FirebaseContextType {
   isAuthorized: boolean;
   isAdmin: boolean;
   userProfile: SystemUser | null;
+  needsProfileUpdate: boolean;
   login: () => Promise<void>;
   loginWithEmail: (email: string, pass: string) => Promise<void>;
   registerWithEmail: (email: string, pass: string) => Promise<void>;
@@ -101,6 +102,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
+  const [needsProfileUpdate, setNeedsProfileUpdate] = useState(false);
 
   const [clients, setClients] = useState<Client[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
@@ -153,6 +155,9 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(profile);
         setIsAdmin(profile.role === 'Admin' || user.email === 'alfamaqmanutencao@gmail.com');
         setIsAuthorized(profile.status === 'Ativo');
+        // Verificar se faltam dados obrigatórios (exceto para o admin mestre se ele já estiver ativo)
+        const isMissingData = !profile.cpf || !profile.phone || !profile.name;
+        setNeedsProfileUpdate(isMissingData && user.email !== 'alfamaqmanutencao@gmail.com');
       } else if (isAuthReady) {
         // Se a lista de usuários já carregou e não achou, pode ser um novo usuário
         const adminEmail = 'alfamaqmanutencao@gmail.com';
@@ -360,6 +365,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       isAuthorized,
       isAdmin,
       userProfile,
+      needsProfileUpdate,
       login, 
       loginWithEmail,
       registerWithEmail,
