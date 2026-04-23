@@ -46,9 +46,24 @@ export default function Home() {
   if (loading || !isAuthReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#fbf8ff]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#000666] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[#000666] font-bold">Carregando Sistema...</p>
+        <div className="flex flex-col items-center gap-6 max-w-sm text-center p-8">
+          <div className="w-16 h-16 border-4 border-[#000666] border-t-transparent rounded-full animate-spin shadow-lg shadow-[#000666]/10"></div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-black text-[#000666]">ALFAMAQ</h2>
+            <p className="text-[#000666]/60 font-bold text-sm">Sincronizando dados com o servidor...</p>
+          </div>
+          
+          <div className="pt-4 space-y-4">
+            <p className="text-xs text-slate-400 font-medium">
+              Se o carregamento demorar mais de 15 segundos, sua conexão pode estar lenta ou há um problema temporário no servidor.
+            </p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-[#000666] text-xs font-bold hover:bg-slate-50 transition-all shadow-sm"
+            >
+              Recarregar Sistema
+            </button>
+          </div>
         </div>
       </div>
     );

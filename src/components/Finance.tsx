@@ -92,9 +92,16 @@ export default function Finance({ transactions, setTransactions, suppliers, clie
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
-  const parseDate = (dateStr: string) => {
-    const [day, month, year] = dateStr.split('/').map(Number);
-    return new Date(year, month - 1, day);
+  const parseDate = (dateStr: any) => {
+    if (!dateStr || typeof dateStr !== 'string') return new Date();
+    try {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return new Date();
+      const [day, month, year] = parts.map(Number);
+      return new Date(year, month - 1, day);
+    } catch (e) {
+      return new Date();
+    }
   };
 
   const monthRevenue = transactions

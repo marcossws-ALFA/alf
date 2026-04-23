@@ -117,7 +117,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         setIsAuthReady(true);
         setLoading(false);
       }
-    }, 5000);
+    }, 10000); // Aumentado para 10 segundos para conexões lentas
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       clearTimeout(authTimeout);
@@ -238,17 +238,20 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   };
 
   const sanitizeData = (obj: any): any => {
-    if (obj === null || typeof obj !== 'object') return obj;
+    if (obj === null || obj === undefined) return null;
+    if (typeof obj !== 'object') return obj;
     if (Array.isArray(obj)) return obj.map(sanitizeData);
     
     // Evita sanitizar objetos que não são literais (como Timestamps do Firebase)
     if (obj.constructor && obj.constructor.name !== 'Object') return obj;
 
-    return Object.fromEntries(
-      Object.entries(obj)
-        .filter(([_, v]) => v !== undefined)
-        .map(([k, v]) => [k, sanitizeData(v)])
-    );
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (value !== undefined) {
+        sanitized[key] = sanitizeData(value);
+      }
+    }
+    return sanitized;
   };
 
   const actions = {

@@ -37,11 +37,17 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ orders, transactions, pdvOrders }: DashboardProps) {
-  const recentOrders = [...orders].sort((a, b) => {
-    const dateA = new Date(a.createdAt.split('/').reverse().join('-')).getTime();
-    const dateB = new Date(b.createdAt.split('/').reverse().join('-')).getTime();
-    return dateB - dateA;
-  }).slice(0, 5);
+  const recentOrders = React.useMemo(() => {
+    return [...orders].sort((a, b) => {
+      try {
+        const dateA = a.createdAt && typeof a.createdAt === 'string' ? new Date(a.createdAt.split('/').reverse().join('-')).getTime() : 0;
+        const dateB = b.createdAt && typeof b.createdAt === 'string' ? new Date(b.createdAt.split('/').reverse().join('-')).getTime() : 0;
+        return dateB - dateA;
+      } catch (e) {
+        return 0;
+      }
+    }).slice(0, 5);
+  }, [orders]);
   
   const totalRevenue = transactions
     .filter(tx => tx.type === 'Receita' && tx.status === 'Pago')
@@ -61,23 +67,33 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
     const data = months.map((month, index) => {
       const revenue = transactions
         .filter(tx => {
-          const txDate = new Date(tx.date.split('/').reverse().join('-'));
-          return tx.type === 'Receita' && 
-                 tx.status === 'Pago' && 
-                 txDate.getMonth() === index && 
-                 txDate.getFullYear() === currentYear;
+          if (!tx.date || typeof tx.date !== 'string') return false;
+          try {
+            const txDate = new Date(tx.date.split('/').reverse().join('-'));
+            return tx.type === 'Receita' && 
+                   tx.status === 'Pago' && 
+                   txDate.getMonth() === index && 
+                   txDate.getFullYear() === currentYear;
+          } catch (e) {
+            return false;
+          }
         })
-        .reduce((acc, tx) => acc + tx.value, 0);
+        .reduce((acc, tx) => acc + (tx.value || 0), 0);
 
       const previousRevenue = transactions
         .filter(tx => {
-          const txDate = new Date(tx.date.split('/').reverse().join('-'));
-          return tx.type === 'Receita' && 
-                 tx.status === 'Pago' && 
-                 txDate.getMonth() === index && 
-                 txDate.getFullYear() === currentYear - 1;
+          if (!tx.date || typeof tx.date !== 'string') return false;
+          try {
+            const txDate = new Date(tx.date.split('/').reverse().join('-'));
+            return tx.type === 'Receita' && 
+                   tx.status === 'Pago' && 
+                   txDate.getMonth() === index && 
+                   txDate.getFullYear() === currentYear - 1;
+          } catch (e) {
+            return false;
+          }
         })
-        .reduce((acc, tx) => acc + tx.value, 0);
+        .reduce((acc, tx) => acc + (tx.value || 0), 0);
 
       return { name: month, current: revenue, previous: previousRevenue };
     });
@@ -95,19 +111,23 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
     orders.forEach(order => {
       if (order.status === 'CONCLUIDO') {
         (order.parts || []).forEach(p => {
-          partsTotal += parseFloat(p.totalPrice.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+          if (p.totalPrice && typeof p.totalPrice === 'string') {
+            partsTotal += parseFloat(p.totalPrice.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+          }
         });
         (order.services || []).forEach(s => {
-          servicesTotal += parseFloat(s.totalPrice.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+          if (s.totalPrice && typeof s.totalPrice === 'string') {
+            servicesTotal += parseFloat(s.totalPrice.replace(/[^\d,]/g, '').replace(',', '.') || '0');
+          }
         });
       }
     });
 
     pdvOrders.forEach(order => {
       if (order.status === 'Finalizado') {
-        order.items.forEach(item => {
-          if (item.type === 'part') partsTotal += item.price * item.quantity;
-          else servicesTotal += item.price * item.quantity;
+        (order.items || []).forEach(item => {
+          if (item.type === 'part') partsTotal += (item.price || 0) * (item.quantity || 0);
+          else servicesTotal += (item.price || 0) * (item.quantity || 0);
         });
       }
     });
@@ -125,8 +145,10 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
     
     if (totalCount === 0) return 0;
 
-    const totalVal = completedOrders.reduce((acc, o) => acc + parseFloat(o.total.replace(/[^\d,]/g, '').replace(',', '.') || '0'), 0) +
-                    completedPDV.reduce((acc, o) => acc + o.total, 0);
+    const totalVal = completedOrders.reduce((acc, o) => {
+      const val = typeof o.total === 'string' ? parseFloat(o.total.replace(/[^\d,]/g, '').replace(',', '.') || '0') : (typeof o.total === 'number' ? o.total : 0);
+      return acc + val;
+    }, 0) + completedPDV.reduce((acc, o) => acc + (o.total || 0), 0);
     
     return totalVal / totalCount;
   }, [orders, pdvOrders]);
