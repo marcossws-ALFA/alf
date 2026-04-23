@@ -332,11 +332,10 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     update: async (col: string, id: string, data: any) => {
       const { id: _, ...rest } = data;
       const sanitized = sanitizeData(rest);
-      // Usar setDoc com merge: true para permitir upserts e evitar erro "No document to update"
-      return setDoc(doc(db, col, id), {
+      return updateDoc(doc(db, col, id), {
         ...sanitized,
         updatedAt: serverTimestamp()
-      }, { merge: true });
+      });
     },
     remove: async (col: string, id: string) => {
       return deleteDoc(doc(db, col, id));

@@ -243,8 +243,8 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
             </div>
           </div>
           
-          <div className="h-64 w-full min-h-[256px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis 
@@ -271,8 +271,8 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
           <h4 className="text-lg font-bold text-[#1b1b21] mb-1">Mix de Receita</h4>
           <p className="text-xs text-slate-500 mb-6">Distribuição entre Peças e Serviços</p>
           
-          <div className="flex-1 min-h-[250px] relative">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="flex-1 min-h-[200px] relative">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <PieChart>
                 <Pie
                   data={distributionData}
