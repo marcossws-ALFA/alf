@@ -24,6 +24,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useFirebase } from '../context/FirebaseContext';
 import { View, CompanyData } from '../types';
@@ -347,5 +348,3 @@ export default function Layout({
     </div>
   );
 }
-
-import { motion, AnimatePresence } from 'motion/react';
