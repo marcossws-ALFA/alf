@@ -75,6 +75,19 @@ interface FirebaseContextType {
     remove: (col: string, id: string) => Promise<void>;
     set: (col: string, id: string, data: any) => Promise<void>;
     setCompanyData: (data: CompanyData | null) => Promise<void>;
+    setClients: React.Dispatch<React.SetStateAction<Client[]>>;
+    setParts: React.Dispatch<React.SetStateAction<Part[]>>;
+    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+    setPdvOrders: React.Dispatch<React.SetStateAction<PDVOrder[]>>;
+    setServiceOrders: React.Dispatch<React.SetStateAction<ServiceOrder[]>>;
+    setEquipment: React.Dispatch<React.SetStateAction<Equipment[]>>;
+    setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
+    setMechanics: React.Dispatch<React.SetStateAction<Mechanic[]>>;
+    setSellers: React.Dispatch<React.SetStateAction<Seller[]>>;
+    setRentals: React.Dispatch<React.SetStateAction<Rental[]>>;
+    setServices: React.Dispatch<React.SetStateAction<Service[]>>;
+    setFixedExpenses: React.Dispatch<React.SetStateAction<FixedExpense[]>>;
+    setSystemUsers: React.Dispatch<React.SetStateAction<SystemUser[]>>;
   };
 }
 
@@ -180,7 +193,20 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         ...sanitized,
         updatedAt: serverTimestamp()
       });
-    }
+    },
+    setClients,
+    setParts,
+    setTransactions,
+    setPdvOrders,
+    setServiceOrders,
+    setEquipment,
+    setSuppliers,
+    setMechanics,
+    setSellers,
+    setRentals,
+    setServices,
+    setFixedExpenses,
+    setSystemUsers
   }), [sanitizeData]);
 
   useEffect(() => {

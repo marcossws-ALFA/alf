@@ -393,7 +393,11 @@ export default function Home() {
             parts={data.parts} 
             services={data.services} 
             clients={data.clients} 
+            setClients={actions.setClients}
+            setParts={actions.setParts}
+            setTransactions={actions.setTransactions}
             pdvOrders={data.pdvOrders}
+            setPdvOrders={actions.setPdvOrders}
             sellers={data.sellers}
           />
         );
@@ -401,11 +405,15 @@ export default function Home() {
         return (
           <ServiceOrders 
             orders={data.serviceOrders} 
+            setOrders={actions.setServiceOrders}
             clients={data.clients}
+            setClients={actions.setClients}
             equipment={data.equipment}
+            setEquipment={actions.setEquipment}
             partsList={data.parts}
             servicesList={data.services}
             transactions={data.transactions}
+            setTransactions={actions.setTransactions}
             mechanics={data.mechanics}
             sellers={data.sellers}
           />
@@ -414,6 +422,7 @@ export default function Home() {
         return (
           <Clients 
             clients={data.clients} 
+            setClients={actions.setClients} 
             equipmentList={data.equipment} 
             orders={data.serviceOrders}
             onOpenOS={(id) => {
@@ -425,6 +434,7 @@ export default function Home() {
         return (
           <Equipment 
             equipmentList={data.equipment} 
+            setEquipmentList={actions.setEquipment} 
             clients={data.clients} 
             orders={data.serviceOrders}
           />
@@ -433,16 +443,20 @@ export default function Home() {
         return (
           <Parts 
             parts={data.parts} 
+            setParts={actions.setParts} 
             transactions={data.transactions}
+            setTransactions={actions.setTransactions}
             suppliers={data.suppliers} 
+            setSuppliers={actions.setSuppliers}
           />
         );
       case 'services':
-        return <Services services={data.services} />;
+        return <Services services={data.services} setServices={actions.setServices} />;
       case 'finance':
         return (
           <Finance 
             transactions={data.transactions} 
+            setTransactions={actions.setTransactions}
             suppliers={data.suppliers}
             clients={data.clients}
             onViewChange={(view) => setCurrentView(view)}
@@ -452,7 +466,9 @@ export default function Home() {
         return (
           <Receivables 
             transactions={data.transactions} 
+            setTransactions={actions.setTransactions} 
             clients={data.clients}
+            setClients={actions.setClients}
             onBack={() => setCurrentView('finance')}
             onOpenOS={(id) => setCurrentView('service-orders')}
             onOpenRental={(id) => setCurrentView('rentals')}
@@ -463,8 +479,11 @@ export default function Home() {
         return (
           <Payables 
             transactions={data.transactions} 
+            setTransactions={actions.setTransactions} 
             suppliers={data.suppliers}
+            setSuppliers={actions.setSuppliers}
             fixedExpenses={data.fixedExpenses}
+            setFixedExpenses={actions.setFixedExpenses}
             orders={data.serviceOrders}
             mechanics={data.mechanics}
             sellers={data.sellers}
@@ -472,13 +491,17 @@ export default function Home() {
           />
         );
       case 'suppliers':
-        return <Suppliers suppliers={data.suppliers} transactions={data.transactions} />;
+        return <Suppliers suppliers={data.suppliers} setSuppliers={actions.setSuppliers} transactions={data.transactions} />;
       case 'rentals':
         return (
           <Rentals 
             rentals={data.rentals} 
+            setRentals={actions.setRentals}
             equipment={data.equipment} 
+            setEquipment={actions.setEquipment}
             clients={data.clients}
+            setClients={actions.setClients}
+            setTransactions={actions.setTransactions}
           />
         );
       case 'settings':
@@ -487,8 +510,11 @@ export default function Home() {
             companyData={companyData} 
             setCompanyData={(data) => actions.setCompanyData(data as CompanyData)}
             mechanics={data.mechanics} 
+            setMechanics={actions.setMechanics}
             sellers={data.sellers} 
+            setSellers={actions.setSellers}
             systemUsers={data.systemUsers}
+            setSystemUsers={actions.setSystemUsers}
           />
         );
       default:
