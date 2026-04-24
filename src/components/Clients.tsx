@@ -346,7 +346,9 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (client.document && client.document.includes(searchTerm)) ||
         (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase()));
+        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (client.phone && client.phone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''))) ||
+        (client.mobile && client.mobile.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')));
       
       return matchesStatus && matchesSearch;
     });
