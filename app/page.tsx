@@ -17,7 +17,7 @@ import Rentals from '@/src/components/Rentals';
 import PDV from '@/src/components/PDV';
 import { View, Equipment as EquipmentType, Client, ServiceOrder, Part, Service, Transaction, Supplier, FixedExpense, Mechanic, Seller, SystemUser, PDVOrder, Rental, CompanyData } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
-import { LogIn, QrCode, Lock } from 'lucide-react';
+import { LogIn, QrCode, Lock, LogOut, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import Image from 'next/image';
 
@@ -42,6 +42,8 @@ export default function Home() {
   const [loginPassword, setLoginPassword] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'google'>('login');
   const [isAuthProcessing, setIsAuthProcessing] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Estados para o formulário de perfil
   const [profileForm, setProfileForm] = useState({
@@ -49,6 +51,21 @@ export default function Home() {
     cpf: '',
     phone: ''
   });
+
+  const handleLogoutClick = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const handleConfirmLogout = async (sync: boolean) => {
+    if (sync) {
+      setIsSyncing(true);
+      // Simula uma sincronização final antes de sair
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+    logout();
+    setIsLogoutModalOpen(false);
+    setIsSyncing(false);
+  };
 
   useEffect(() => {
     if (user && userProfile) {
@@ -314,7 +331,7 @@ export default function Home() {
             </button>
 
             <button
-              onClick={logout}
+              onClick={handleLogoutClick}
               type="button"
               className="w-full py-3 text-slate-400 text-xs font-bold hover:text-red-500 transition-colors"
             >
@@ -365,7 +382,7 @@ export default function Home() {
           </div>
 
           <button
-            onClick={logout}
+            onClick={handleLogoutClick}
             className="w-full py-4 bg-white border-2 border-[#000666]/10 text-[#000666] rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-50 transition-all active:scale-95"
           >
             Sair desta conta
@@ -530,6 +547,7 @@ export default function Home() {
       onNewRental={() => setCurrentView('rentals')}
       onNewSale={() => setCurrentView('pdv')}
       companyData={companyData}
+      onLogout={handleLogoutClick}
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -542,6 +560,63 @@ export default function Home() {
         >
           {renderView()}
         </motion.div>
+      </AnimatePresence>
+
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {isLogoutModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#000666]/20 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2rem] shadow-2xl w-full max-w-sm overflow-hidden border border-[#c6c5d4]/20"
+            >
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6 transform rotate-3">
+                  <LogOut size={40} />
+                </div>
+                <h3 className="text-2xl font-black text-[#1b1b21] mb-2 tracking-tight">Sair do Sistema?</h3>
+                <p className="text-slate-500 text-sm font-medium mb-8">
+                  Deseja salvar todas as alterações antes de encerrar sua sessão?
+                </p>
+                <div className="space-y-3">
+                  <button
+                    disabled={isSyncing}
+                    onClick={() => handleConfirmLogout(true)}
+                    className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#000666]/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    {isSyncing ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Salvando alterações...
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp size={18} />
+                        Salvar e Sair
+                      </>
+                    )}
+                  </button>
+                  <button
+                    disabled={isSyncing}
+                    onClick={() => handleConfirmLogout(false)}
+                    className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-bold text-sm hover:bg-red-100 transition-all active:scale-95"
+                  >
+                    Sair sem Salvar
+                  </button>
+                  <button
+                    disabled={isSyncing}
+                    onClick={() => setIsLogoutModalOpen(false)}
+                    className="w-full py-4 text-slate-400 font-bold text-sm hover:text-slate-600 transition-all"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </Layout>
   );
