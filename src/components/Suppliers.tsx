@@ -26,18 +26,26 @@ interface SuppliersProps {
   suppliers: Supplier[];
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   transactions: Transaction[];
+  onUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
-import SupplierFormModal from './SupplierFormModal';
-import XMLImportPayableModal from './XMLImportPayableModal';
-
-export default function Suppliers({ suppliers, setSuppliers, transactions }: SuppliersProps) {
+export default function Suppliers({ suppliers, setSuppliers, transactions, onUnsavedChanges }: SuppliersProps) {
   const { actions } = useFirebase();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isXMLModalOpen, setIsXMLModalOpen] = useState(false);
   const [xmlImportData, setXmlImportData] = useState<any>(null);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+
+  // Track if there are unsaved imports
+  React.useEffect(() => {
+    if (onUnsavedChanges) {
+      onUnsavedChanges(isXMLModalOpen || isModalOpen);
+    }
+    return () => {
+      if (onUnsavedChanges) onUnsavedChanges(false);
+    };
+  }, [isXMLModalOpen, isModalOpen, onUnsavedChanges]);
 
   const filteredSuppliers = suppliers.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,35 +166,44 @@ export default function Suppliers({ suppliers, setSuppliers, transactions }: Sup
     const existingSupplier = suppliers.find(s => s.document.replace(/\D/g, '') === cnpj);
     
     try {
-      if (existingSupplier) {
-        await actions.update('suppliers', existingSupplier.id, {
-          name: data.supplier.name,
-          email: data.supplier.email,
-          phone: data.supplier.phone,
-          street: data.supplier.address.street,
-          number: data.supplier.address.number,
-          neighborhood: data.supplier.address.neighborhood,
-          city: data.supplier.address.city,
-          state: data.supplier.address.state,
-          zipCode: data.supplier.address.zip,
-        });
+      const supplierData = {
+        name: data.supplier.name,
+        email: data.supplier.email,
+        phone: data.supplier.phone,
+        street: data.supplier.address.street,
+        number: data.supplier.address.number,
+        neighborhood: data.supplier.address.neighborhood,
+        city: data.supplier.address.city,
+        state: data.supplier.address.state,
+        zipCode: data.supplier.address.zip,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingSupplier && existingSupplier.id && existingSupplier.id.length > 5) {
+        try {
+          console.log(`Atualizando fornecedor: ${existingSupplier.name}`);
+          await actions.update('suppliers', existingSupplier.id, supplierData);
+        } catch (error: any) {
+          if (error.message?.includes('not-found') || error.code === 'not-found') {
+            await actions.add('suppliers', {
+              ...supplierData,
+              document: data.supplier.cnpj,
+              category: 'Fornecedores',
+              status: 'Ativo',
+              createdAt: new Date().toLocaleDateString('pt-BR')
+            });
+          } else {
+            throw error;
+          }
+        }
       } else {
-        const newSupplier = {
-          name: data.supplier.name,
+        await actions.add('suppliers', {
+          ...supplierData,
           document: data.supplier.cnpj,
-          email: data.supplier.email,
-          phone: data.supplier.phone,
           category: 'Fornecedores',
           status: 'Ativo',
-          createdAt: new Date().toLocaleDateString('pt-BR'),
-          street: data.supplier.address.street,
-          number: data.supplier.address.number,
-          neighborhood: data.supplier.address.neighborhood,
-          city: data.supplier.address.city,
-          state: data.supplier.address.state,
-          zipCode: data.supplier.address.zip,
-        };
-        await actions.add('suppliers', newSupplier);
+          createdAt: new Date().toLocaleDateString('pt-BR')
+        });
       }
 
       setIsXMLModalOpen(false);

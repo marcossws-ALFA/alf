@@ -517,10 +517,11 @@ export default function Home() {
             mechanics={data.mechanics}
             sellers={data.sellers}
             onBack={() => setCurrentView('finance')}
+            onUnsavedChanges={setHasUnsavedChanges}
           />
         );
       case 'suppliers':
-        return <Suppliers suppliers={data.suppliers} setSuppliers={actions.setSuppliers} transactions={data.transactions} />;
+        return <Suppliers suppliers={data.suppliers} setSuppliers={actions.setSuppliers} transactions={data.transactions} onUnsavedChanges={setHasUnsavedChanges} />;
       case 'rentals':
         return (
           <Rentals 
@@ -590,26 +591,40 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-black text-[#1b1b21] mb-2 tracking-tight">Sair do Sistema?</h3>
                 <p className="text-slate-500 text-sm font-medium mb-8">
-                  Deseja salvar todas as alterações antes de encerrar sua sessão?
+                  {hasUnsavedChanges 
+                    ? 'Você possui alterações ou importações XML pendentes em Peças. Deseja revisar antes de sair?'
+                    : 'Deseja salvar todas as alterações antes de encerrar sua sessão?'}
                 </p>
                 <div className="space-y-3">
-                  <button
-                    disabled={isSyncing}
-                    onClick={() => handleConfirmLogout(true)}
-                    className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#000666]/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    {isSyncing ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Salvando alterações...
-                      </>
-                    ) : (
-                      <>
-                        <TrendingUp size={18} />
-                        Salvar e Sair
-                      </>
-                    )}
-                  </button>
+                  {hasUnsavedChanges ? (
+                    <button
+                      onClick={() => {
+                        setIsLogoutModalOpen(false);
+                        setCurrentView('parts');
+                      }}
+                      className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#000666]/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      Revisar Alterações
+                    </button>
+                  ) : (
+                    <button
+                      disabled={isSyncing}
+                      onClick={() => handleConfirmLogout(true)}
+                      className="w-full py-4 bg-[#000666] text-white rounded-2xl font-bold text-sm shadow-xl shadow-[#000666]/10 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      {isSyncing ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Salvando alterações...
+                        </>
+                      ) : (
+                        <>
+                          <TrendingUp size={18} />
+                          Salvar e Sair
+                        </>
+                      )}
+                    </button>
+                  )}
                   <button
                     disabled={isSyncing}
                     onClick={() => handleConfirmLogout(false)}

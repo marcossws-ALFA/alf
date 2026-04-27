@@ -47,6 +47,7 @@ interface PayablesProps {
   sellers: Seller[];
   onBack: () => void;
   onOpenOS?: (osId: string) => void;
+  onUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
 export default function Payables({ 
@@ -60,7 +61,8 @@ export default function Payables({
   mechanics,
   sellers,
   onBack, 
-  onOpenOS 
+  onOpenOS,
+  onUnsavedChanges
 }: PayablesProps) {
   const { actions } = useFirebase();
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -72,6 +74,16 @@ export default function Payables({
   const [isSupplierModalOpen, setIsSupplierModalOpen] = React.useState(false);
   const [isXMLModalOpen, setIsXMLModalOpen] = React.useState(false);
   const [isFixedModalOpen, setIsFixedModalOpen] = React.useState(false);
+
+  // Track if there are unsaved imports
+  React.useEffect(() => {
+    if (onUnsavedChanges) {
+      onUnsavedChanges(isXMLModalOpen || isAddModalOpen || isSupplierModalOpen || isFixedModalOpen);
+    }
+    return () => {
+      if (onUnsavedChanges) onUnsavedChanges(false);
+    };
+  }, [isXMLModalOpen, isAddModalOpen, isSupplierModalOpen, isFixedModalOpen, onUnsavedChanges]);
   const [editingFixed, setEditingFixed] = React.useState<FixedExpense | null>(null);
   
   const [xmlImportData, setXmlImportData] = React.useState<any>(null);
@@ -292,35 +304,44 @@ export default function Payables({
     let supplierName = data.supplier.name;
 
     try {
-      if (existingSupplier) {
-        await actions.update('suppliers', existingSupplier.id, {
-          name: data.supplier.name,
-          email: data.supplier.email,
-          phone: data.supplier.phone,
-          street: data.supplier.address.street,
-          number: data.supplier.address.number,
-          neighborhood: data.supplier.address.neighborhood,
-          city: data.supplier.address.city,
-          state: data.supplier.address.state,
-          zipCode: data.supplier.address.zip,
-        });
+      const supplierData = {
+        name: data.supplier.name,
+        email: data.supplier.email,
+        phone: data.supplier.phone,
+        street: data.supplier.address.street,
+        number: data.supplier.address.number,
+        neighborhood: data.supplier.address.neighborhood,
+        city: data.supplier.address.city,
+        state: data.supplier.address.state,
+        zipCode: data.supplier.address.zip,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingSupplier && existingSupplier.id && existingSupplier.id.length > 5) {
+        try {
+          console.log(`Atualizando fornecedor: ${existingSupplier.name}`);
+          await actions.update('suppliers', existingSupplier.id, supplierData);
+        } catch (error: any) {
+          if (error.message?.includes('not-found') || error.code === 'not-found') {
+            await actions.add('suppliers', {
+              ...supplierData,
+              document: data.supplier.cnpj,
+              category: 'Fornecedores',
+              status: 'Ativo',
+              createdAt: new Date().toLocaleDateString('pt-BR')
+            });
+          } else {
+            throw error;
+          }
+        }
       } else {
-        const newSupplier = {
-          name: data.supplier.name,
+        await actions.add('suppliers', {
+          ...supplierData,
           document: data.supplier.cnpj,
-          email: data.supplier.email,
-          phone: data.supplier.phone,
           category: 'Fornecedores',
           status: 'Ativo',
-          createdAt: new Date().toLocaleDateString('pt-BR'),
-          street: data.supplier.address.street,
-          number: data.supplier.address.number,
-          neighborhood: data.supplier.address.neighborhood,
-          city: data.supplier.address.city,
-          state: data.supplier.address.state,
-          zipCode: data.supplier.address.zip,
-        };
-        await actions.add('suppliers', newSupplier);
+          createdAt: new Date().toLocaleDateString('pt-BR')
+        });
       }
 
       for (const inst of data.installments) {
@@ -333,7 +354,8 @@ export default function Payables({
           category: 'Fornecedores',
           type: 'Despesa',
           status: inst.status || 'Pendente',
-          notes: `Importado via XML da NF ${data.invoiceNumber}`
+          notes: `Importado via XML da NF ${data.invoiceNumber}`,
+          createdAt: new Date().toISOString()
         });
       }
 

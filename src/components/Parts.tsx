@@ -134,6 +134,9 @@ export default function Parts({
       
       onUnsavedChanges(!!(isModalDirty || isImportDirty));
     }
+    return () => {
+      if (onUnsavedChanges) onUnsavedChanges(false);
+    };
   }, [isModalOpen, formData, editingPart, isImportModalOpen, isXMLModalOpen, onUnsavedChanges]);
 
   const filteredParts = (() => {
@@ -388,33 +391,44 @@ export default function Parts({
     let supplierName = data.supplier.name;
 
     try {
-      if (existingSupplier) {
-        await actions.update('suppliers', existingSupplier.id, {
-          name: data.supplier.name,
-          email: data.supplier.email,
-          phone: data.supplier.phone,
-          street: data.supplier.address.street,
-          number: data.supplier.address.number,
-          neighborhood: data.supplier.address.neighborhood,
-          city: data.supplier.address.city,
-          state: data.supplier.address.state,
-          zipCode: data.supplier.address.zip,
-        });
+      const supplierData = {
+        name: data.supplier.name,
+        email: data.supplier.email,
+        phone: data.supplier.phone,
+        street: data.supplier.address.street,
+        number: data.supplier.address.number,
+        neighborhood: data.supplier.address.neighborhood,
+        city: data.supplier.address.city,
+        state: data.supplier.address.state,
+        zipCode: data.supplier.address.zip,
+        updatedAt: new Date().toISOString()
+      };
+
+      if (existingSupplier && existingSupplier.id && existingSupplier.id.length > 5) {
+        try {
+          console.log(`Atualizando fornecedor: ${existingSupplier.name}`);
+          await actions.update('suppliers', existingSupplier.id, supplierData);
+        } catch (error: any) {
+          if (error.message?.includes('not-found') || error.code === 'not-found') {
+            console.warn(`Fornecedor ${existingSupplier.id} não encontrado. Criando novo.`);
+            await actions.add('suppliers', {
+              ...supplierData,
+              document: data.supplier.cnpj,
+              category: 'Fornecedores',
+              status: 'Ativo',
+              createdAt: new Date().toLocaleDateString('pt-BR')
+            });
+          } else {
+            throw error;
+          }
+        }
       } else {
         const newSupplier = {
-          name: data.supplier.name,
+          ...supplierData,
           document: data.supplier.cnpj,
-          email: data.supplier.email,
-          phone: data.supplier.phone,
           category: 'Fornecedores',
           status: 'Ativo',
-          createdAt: new Date().toLocaleDateString('pt-BR'),
-          street: data.supplier.address.street,
-          number: data.supplier.address.number,
-          neighborhood: data.supplier.address.neighborhood,
-          city: data.supplier.address.city,
-          state: data.supplier.address.state,
-          zipCode: data.supplier.address.zip,
+          createdAt: new Date().toLocaleDateString('pt-BR')
         };
         await actions.add('suppliers', newSupplier);
       }
@@ -444,37 +458,61 @@ export default function Parts({
 
   const confirmImport = async () => {
     const toImport = pendingImportParts.filter(p => selectedImportIds.has(p.id));
+    const processedCodes = new Set<string>();
     
     try {
       for (const newPart of toImport) {
-        const existingPart = parts.find(p => 
-          p.code === newPart.code || 
-          p.additionalCodes?.includes(newPart.code)
-        );
+        const partCode = newPart.code?.trim().toUpperCase();
+        if (!partCode || processedCodes.has(partCode)) continue;
+        processedCodes.add(partCode);
 
-        if (existingPart) {
-          const mergedAdditional = Array.from(new Set([
-            ...(existingPart.additionalCodes || []),
-            ...(newPart.additionalCodes || [])
-          ])).filter(c => c !== existingPart.code);
+        // Buscar peça existente
+        const existingPart = parts.find(p => {
+          const pCode = p.code?.trim().toUpperCase();
+          const pAddCodes = (p.additionalCodes || []).map(c => c.trim().toUpperCase());
+          return pCode === partCode || pAddCodes.includes(partCode);
+        });
 
-          await actions.update('parts', existingPart.id, {
-            costPrice: newPart.costPrice,
-            price: newPart.price,
-            stock: (existingPart.stock || 0) + newPart.stock,
-            additionalCodes: mergedAdditional
-          });
+        if (existingPart && existingPart.id && existingPart.id.length > 5) {
+          try {
+            const mergedAdditional = Array.from(new Set([
+              ...(existingPart.additionalCodes || []),
+              ...(newPart.additionalCodes || [])
+            ])).filter(c => c !== existingPart.code);
+
+            console.log(`Atualizando peça: ${existingPart.name} (${existingPart.id})`);
+            await actions.update('parts', existingPart.id, {
+              costPrice: newPart.costPrice,
+              price: newPart.price,
+              stock: (existingPart.stock || 0) + newPart.stock,
+              additionalCodes: mergedAdditional,
+              updatedAt: new Date().toISOString()
+            });
+          } catch (error: any) {
+            if (error.message?.includes('not-found') || error.code === 'not-found') {
+              console.warn(`Peça ${existingPart.id} não encontrada. Criando nova.`);
+              const { id, ...partData } = newPart;
+              await actions.add('parts', {
+                ...partData,
+                createdAt: new Date().toISOString()
+              });
+            } else {
+              throw error;
+            }
+          }
         } else {
-          // Remover o ID temporário gerado no import
+          console.log(`Adicionando nova peça: ${newPart.name}`);
           const { id, ...partData } = newPart;
-          await actions.add('parts', partData);
+          await actions.add('parts', {
+            ...partData,
+            createdAt: new Date().toISOString()
+          });
         }
       }
 
       setIsImportModalOpen(false);
       setPendingImportParts([]);
       
-      // After parts import, trigger financial review
       if (xmlImportData) {
         setIsXMLModalOpen(true);
       } else {
@@ -482,7 +520,7 @@ export default function Parts({
       }
     } catch (error) {
       console.error('Erro ao importar peças:', error);
-      alert('Erro ao salvar as peças no banco de dados.');
+      alert('Erro ao salvar as peças no banco de dados. Verifique o console.');
     }
   };
 
