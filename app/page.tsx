@@ -44,6 +44,7 @@ export default function Home() {
   const [isAuthProcessing, setIsAuthProcessing] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Estados para o formulário de perfil
   const [profileForm, setProfileForm] = useState({
@@ -65,6 +66,16 @@ export default function Home() {
     logout();
     setIsLogoutModalOpen(false);
     setIsSyncing(false);
+  };
+
+  const handleViewChange = (newView: View) => {
+    if (currentView === 'parts' && hasUnsavedChanges) {
+      if (!confirm('Você tem alterações não salvas em Peças. Deseja sair mesmo assim?')) {
+        return;
+      }
+      setHasUnsavedChanges(false);
+    }
+    setCurrentView(newView);
   };
 
   useEffect(() => {
@@ -465,6 +476,7 @@ export default function Home() {
             setTransactions={actions.setTransactions}
             suppliers={data.suppliers} 
             setSuppliers={actions.setSuppliers}
+            onUnsavedChanges={setHasUnsavedChanges}
           />
         );
       case 'services':
@@ -542,10 +554,10 @@ export default function Home() {
   return (
     <Layout 
       currentView={currentView} 
-      onViewChange={setCurrentView}
-      onNewOS={() => setCurrentView('service-orders')}
-      onNewRental={() => setCurrentView('rentals')}
-      onNewSale={() => setCurrentView('pdv')}
+      onViewChange={handleViewChange}
+      onNewOS={() => handleViewChange('service-orders')}
+      onNewRental={() => handleViewChange('rentals')}
+      onNewSale={() => handleViewChange('pdv')}
       companyData={companyData}
       onLogout={handleLogoutClick}
     >

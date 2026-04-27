@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -77,6 +77,7 @@ interface PartsProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   suppliers: Supplier[];
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
+  onUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
 export default function Parts({ 
@@ -85,7 +86,8 @@ export default function Parts({
   transactions, 
   setTransactions, 
   suppliers, 
-  setSuppliers 
+  setSuppliers,
+  onUnsavedChanges
 }: PartsProps) {
   const { actions } = useFirebase();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,6 +118,19 @@ export default function Parts({
     brand: '',
     location: ''
   });
+
+  // Track if there are unsaved changes in the modal
+  useEffect(() => {
+    if (onUnsavedChanges) {
+      const isDirty = (isModalOpen && formData.name !== '' && !editingPart) || 
+                      (isModalOpen && editingPart && (
+                        formData.name !== editingPart.name ||
+                        formData.price !== editingPart.price ||
+                        formData.stock !== editingPart.stock
+                      ));
+      onUnsavedChanges(!!isDirty);
+    }
+  }, [isModalOpen, formData, editingPart, onUnsavedChanges]);
 
   const filteredParts = (() => {
     // 1. Remover duplicados por Código SKU
