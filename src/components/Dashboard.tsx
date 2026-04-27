@@ -40,7 +40,10 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setIsMounted(true);
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 150);
+    return () => clearTimeout(timer);
   }, []);
 
   const recentOrders = React.useMemo(() => {
@@ -249,9 +252,9 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
             </div>
           </div>
           
-          <div className="h-64 w-full">
+          <div className="h-64 w-full relative">
             {isMounted && (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <ResponsiveContainer width="99%" height="100%">
                 <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                   <XAxis 
@@ -279,9 +282,9 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
           <h4 className="text-lg font-bold text-[#1b1b21] mb-1">Mix de Receita</h4>
           <p className="text-xs text-slate-500 mb-6">Distribuição entre Peças e Serviços</p>
           
-          <div className="h-[250px] relative w-full">
+          <div className="h-[250px] relative w-full overflow-hidden">
             {isMounted && (
-              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+              <ResponsiveContainer width="99%" height="100%">
                 <PieChart>
                   <Pie
                     data={distributionData}
