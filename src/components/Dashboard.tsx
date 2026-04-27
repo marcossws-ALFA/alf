@@ -42,7 +42,7 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setIsMounted(true);
-    }, 150);
+    }, 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -254,7 +254,7 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
           
           <div className="h-64 w-full relative">
             {isMounted && (
-              <ResponsiveContainer width="99%" height="100%">
+              <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                 <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                   <XAxis 
@@ -284,7 +284,7 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
           
           <div className="h-[250px] relative w-full overflow-hidden">
             {isMounted && (
-              <ResponsiveContainer width="99%" height="100%">
+              <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0} debounce={50}>
                 <PieChart>
                   <Pie
                     data={distributionData}

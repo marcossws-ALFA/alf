@@ -119,18 +119,22 @@ export default function Parts({
     location: ''
   });
 
-  // Track if there are unsaved changes in the modal
+  // Track if there are unsaved changes
   useEffect(() => {
     if (onUnsavedChanges) {
-      const isDirty = (isModalOpen && formData.name !== '' && !editingPart) || 
-                      (isModalOpen && editingPart && (
-                        formData.name !== editingPart.name ||
-                        formData.price !== editingPart.price ||
-                        formData.stock !== editingPart.stock
-                      ));
-      onUnsavedChanges(!!isDirty);
+      const isModalDirty = (isModalOpen && formData.name !== '' && !editingPart) || 
+                          (isModalOpen && editingPart && (
+                            formData.name !== (editingPart.name || '') ||
+                            formData.price !== (editingPart.price || 0) ||
+                            formData.stock !== (editingPart.stock || 0) ||
+                            formData.code !== (editingPart.code || '')
+                          ));
+      
+      const isImportDirty = isImportModalOpen || isXMLModalOpen;
+      
+      onUnsavedChanges(!!(isModalDirty || isImportDirty));
     }
-  }, [isModalOpen, formData, editingPart, onUnsavedChanges]);
+  }, [isModalOpen, formData, editingPart, isImportModalOpen, isXMLModalOpen, onUnsavedChanges]);
 
   const filteredParts = (() => {
     // 1. Remover duplicados por Código SKU
