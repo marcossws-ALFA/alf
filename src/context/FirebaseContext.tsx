@@ -37,7 +37,8 @@ import {
   SystemUser, 
   PDVOrder, 
   Rental, 
-  CompanyData 
+  CompanyData,
+  ImportedInvoice
 } from '../types';
 
 interface FirebaseContextType {
@@ -67,6 +68,7 @@ interface FirebaseContextType {
     systemUsers: SystemUser[];
     pdvOrders: PDVOrder[];
     rentals: Rental[];
+    importedInvoices: ImportedInvoice[];
     companyData: CompanyData | null;
   };
   actions: {
@@ -85,6 +87,7 @@ interface FirebaseContextType {
     setMechanics: React.Dispatch<React.SetStateAction<Mechanic[]>>;
     setSellers: React.Dispatch<React.SetStateAction<Seller[]>>;
     setRentals: React.Dispatch<React.SetStateAction<Rental[]>>;
+    setImportedInvoices: React.Dispatch<React.SetStateAction<ImportedInvoice[]>>;
     setServices: React.Dispatch<React.SetStateAction<Service[]>>;
     setFixedExpenses: React.Dispatch<React.SetStateAction<FixedExpense[]>>;
     setSystemUsers: React.Dispatch<React.SetStateAction<SystemUser[]>>;
@@ -118,6 +121,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
   const [pdvOrders, setPdvOrders] = useState<PDVOrder[]>([]);
   const [rentals, setRentals] = useState<Rental[]>([]);
+  const [importedInvoices, setImportedInvoices] = useState<ImportedInvoice[]>([]);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
 
   const sanitizeData = React.useCallback((obj: any): any => {
@@ -204,6 +208,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
     setMechanics,
     setSellers,
     setRentals,
+    setImportedInvoices,
     setServices,
     setFixedExpenses,
     setSystemUsers
@@ -348,6 +353,9 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       onSnapshot(collection(db, 'rentals'), (snapshot) => {
         setRentals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Rental)));
       }),
+      onSnapshot(collection(db, 'imported_invoices'), (snapshot) => {
+        setImportedInvoices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ImportedInvoice)));
+      }),
       onSnapshot(doc(db, 'company', 'settings'), (doc) => {
         if (doc.exists()) {
           setCompanyData({ id: doc.id, ...doc.data() } as CompanyData);
@@ -418,6 +426,7 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         systemUsers,
         pdvOrders,
         rentals,
+        importedInvoices,
         companyData
       },
       actions

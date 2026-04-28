@@ -359,6 +359,17 @@ export default function Payables({
         });
       }
 
+      // Add to imported_invoices collection
+      await actions.add('imported_invoices', {
+        invoiceNumber: data.invoiceNumber,
+        issuerName: data.supplier.name,
+        issuerDocument: data.supplier.cnpj,
+        date: data.emissionDate,
+        totalValue: data.totalValue,
+        itemsCount: data.installments.length, // approximation for payables
+        importedAt: new Date().toISOString()
+      });
+
       setIsXMLModalOpen(false);
       setXmlImportData(null);
       alert('Importação XML realizada com sucesso!');

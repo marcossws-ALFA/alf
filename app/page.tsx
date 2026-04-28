@@ -488,6 +488,7 @@ export default function Home() {
             setTransactions={actions.setTransactions}
             suppliers={data.suppliers}
             clients={data.clients}
+            importedInvoices={data.importedInvoices}
             onViewChange={(view) => setCurrentView(view)}
           />
         );

@@ -447,6 +447,17 @@ export default function Parts({
         });
       }
 
+      // Add to imported_invoices collection
+      await actions.add('imported_invoices', {
+        invoiceNumber: data.invoiceNumber,
+        issuerName: data.supplier.name,
+        issuerDocument: data.supplier.cnpj,
+        date: data.emissionDate,
+        totalValue: data.totalValue,
+        itemsCount: pendingImportParts.length,
+        importedAt: new Date().toISOString()
+      });
+
       setIsXMLModalOpen(false);
       setXmlImportData(null);
       alert('Importação financeira e atualização de fornecedor concluídas!');

@@ -257,6 +257,21 @@
         "ignoreSundays": { "type": "boolean" }
       },
       "required": ["equipmentId", "clientId", "startDate", "endDate", "status", "totalValue"]
+    },
+    "ImportedInvoice": {
+      "title": "Imported Invoice",
+      "description": "Metadata for invoices imported via XML",
+      "type": "object",
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "issuerName": { "type": "string" },
+        "issuerDocument": { "type": "string" },
+        "date": { "type": "string" },
+        "totalValue": { "type": "number" },
+        "itemsCount": { "type": "number" },
+        "importedAt": { "type": "string" }
+      },
+      "required": ["invoiceNumber", "issuerName", "issuerDocument", "date", "totalValue", "importedAt"]
     }
   },
   "firestore": {
@@ -273,6 +288,7 @@
     "/sellers": { "schema": "Seller", "description": "List of sellers" },
     "/users": { "schema": "SystemUser", "description": "System users" },
     "/pdv_orders": { "schema": "PDVOrder", "description": "PDV sales" },
-    "/rentals": { "schema": "Rental", "description": "Equipment rentals" }
+    "/rentals": { "schema": "Rental", "description": "Equipment rentals" },
+    "/imported_invoices": { "schema": "ImportedInvoice", "description": "Invoices imported from XML" }
   }
 }

@@ -21,6 +21,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { Supplier, Transaction } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
+import SupplierFormModal from './SupplierFormModal';
+import XMLImportPayableModal from './XMLImportPayableModal';
 
 interface SuppliersProps {
   suppliers: Supplier[];
@@ -205,6 +207,17 @@ export default function Suppliers({ suppliers, setSuppliers, transactions, onUns
           createdAt: new Date().toLocaleDateString('pt-BR')
         });
       }
+
+      // Add to imported_invoices collection
+      await actions.add('imported_invoices', {
+        invoiceNumber: data.invoiceNumber,
+        issuerName: data.supplier.name,
+        issuerDocument: data.supplier.cnpj,
+        date: data.emissionDate,
+        totalValue: data.totalValue,
+        itemsCount: 0,
+        importedAt: new Date().toISOString()
+      });
 
       setIsXMLModalOpen(false);
       setXmlImportData(null);
