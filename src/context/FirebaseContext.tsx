@@ -165,10 +165,12 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
         const { id: _, ...rest } = data;
         const sanitized = sanitizeData(rest);
         console.log(`Tentando atualizar documento ${id} em ${col}...`);
-        await updateDoc(doc(db, col, id), {
+        // Usar setDoc com merge: true em vez de updateDoc para ser mais robusto
+        // (cria o documento se ele não existir, evitando erro "No document to update")
+        await setDoc(doc(db, col, id), {
           ...sanitized,
           updatedAt: serverTimestamp()
-        });
+        }, { merge: true });
         console.log(`Documento ${id} atualizado com sucesso em ${col}`);
       } catch (error: any) {
         console.error(`Erro ao atualizar em ${col}:`, error.message, error.code);
