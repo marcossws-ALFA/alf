@@ -12,9 +12,19 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || firebaseConfigJson.appId,
   firestoreDatabaseId: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || firebaseConfigJson.firestoreDatabaseId,
+  databaseURL: firebaseConfigJson.databaseURL,
+  measurementId: firebaseConfigJson.measurementId,
 };
 
 const app = initializeApp(firebaseConfig);
-// Note: firebase-applet-config.json uses firestoreDatabaseId for the database name
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth();
+
+// Initialize Analytics conditionally
+export const getAnalyticsSafe = async () => {
+  if (typeof window !== 'undefined' && firebaseConfig.measurementId) {
+    const { getAnalytics } = await import('firebase/analytics');
+    return getAnalytics(app);
+  }
+  return null;
+};

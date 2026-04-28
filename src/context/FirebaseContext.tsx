@@ -373,12 +373,17 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
     } catch (error: any) {
+      console.error('Login error:', error);
       if (error.code === 'auth/cancelled-popup-request') {
         console.warn('Login popup was cancelled or a previous request was still pending.');
       } else if (error.code === 'auth/popup-closed-by-user') {
         console.log('User closed the login popup.');
+      } else if (error.code === 'auth/invalid-credential') {
+        alert('Erro: Credenciais inválidas. Verifique se as configurações do Firebase estão corretas em seu projeto do Google Cloud.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        alert('Este domínio não está autorizado no console do Firebase. Adicione este domínio na lista de domínios autorizados.');
       } else {
-        console.error('Login error:', error);
+        alert(`Erro ao realizar login: ${error.message}`);
         throw error;
       }
     } finally {
