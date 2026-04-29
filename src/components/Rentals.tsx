@@ -375,10 +375,13 @@ export default function Rentals({ clients, setClients, equipment, setEquipment, 
     }
   };
 
-  const filteredRentals = rentals.filter(r => 
-    r.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.equipmentName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRentals = rentals.filter(r => {
+    const clientName = r?.clientName?.toLowerCase() || '';
+    const equipmentName = r?.equipmentName?.toLowerCase() || '';
+    const search = searchTerm.toLowerCase();
+
+    return clientName.includes(search) || equipmentName.includes(search);
+  });
 
   const countSundays = (startStr: string, endStr: string) => {
     if (!startStr || !endStr) return 0;
@@ -768,9 +771,14 @@ export default function Rentals({ clients, setClients, equipment, setEquipment, 
               <tbody className="divide-y divide-[#c6c5d4]/5">
                 {equipment
                   .filter(e => {
-                    const matchesSearch = e.brand.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                         e.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                         e.type.toLowerCase().includes(searchTerm.toLowerCase());
+                    const brand = e?.brand?.toLowerCase() || '';
+                    const model = e?.model?.toLowerCase() || '';
+                    const type = e?.type?.toLowerCase() || '';
+                    const search = searchTerm.toLowerCase();
+
+                    const matchesSearch = brand.includes(search) || 
+                                         model.includes(search) ||
+                                         type.includes(search);
                     const matchesType = typeFilter === 'Todos' || e.type === typeFilter;
                     return matchesSearch && matchesType;
                   })

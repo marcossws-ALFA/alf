@@ -99,15 +99,17 @@ export default function PDV({ parts, services, clients, setClients, setParts, se
     if (!searchTerm) return [];
     const term = searchTerm.toLowerCase();
     
-    const matchedParts = parts.filter(p => 
-      p.name.toLowerCase().includes(term) || 
-      p.code.toLowerCase().includes(term)
-    ).map(p => ({ ...p, type: 'part' as const }));
+    const matchedParts = parts.filter(p => {
+      const name = p?.name?.toLowerCase() || '';
+      const code = p?.code?.toLowerCase() || '';
+      return name.includes(term) || code.includes(term);
+    }).map(p => ({ ...p, type: 'part' as const }));
 
-    const matchedServices = services.filter(s => 
-      s.name.toLowerCase().includes(term) || 
-      s.code.toLowerCase().includes(term)
-    ).map(s => ({ ...s, type: 'service' as const }));
+    const matchedServices = services.filter(s => {
+      const name = s?.name?.toLowerCase() || '';
+      const code = s?.code?.toLowerCase() || '';
+      return name.includes(term) || code.includes(term);
+    }).map(s => ({ ...s, type: 'service' as const }));
 
     return [...matchedParts, ...matchedServices];
   }, [searchTerm, parts, services]);

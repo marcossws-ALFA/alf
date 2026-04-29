@@ -1,16 +1,19 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
 import { 
-  onAuthStateChanged, 
+  getAuth, 
   signInWithPopup, 
   GoogleAuthProvider, 
-  signOut, 
-  User,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
+  onAuthStateChanged, 
+  User, 
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { 
+  getFirestore, 
   collection, 
   onSnapshot, 
   query, 
@@ -20,376 +23,331 @@ import {
   updateDoc,
   deleteDoc,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  getDoc
 } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import firebaseConfig from '../../firebase-applet-config.json';
 import { 
-  Client, 
   Equipment, 
+  Client, 
   ServiceOrder, 
   Part, 
   Service, 
-  Supplier, 
   Transaction, 
+  Supplier, 
   FixedExpense, 
   Mechanic, 
   Seller, 
   SystemUser, 
   PDVOrder, 
-  Rental, 
+  Rental,
   CompanyData,
   ImportedInvoice
 } from '../types';
 
 interface FirebaseContextType {
   user: User | null;
-  loading: boolean;
-  isAuthReady: boolean;
-  isLoggingIn: boolean;
-  isAuthorized: boolean;
-  isAdmin: boolean;
   userProfile: SystemUser | null;
+  isAdmin: boolean;
+  isAuthorized: boolean;
+  isAuthReady: boolean;
   needsProfileUpdate: boolean;
-  login: () => Promise<void>;
-  loginWithEmail: (email: string, pass: string) => Promise<void>;
-  registerWithEmail: (email: string, pass: string) => Promise<void>;
-  logout: () => Promise<void>;
+  loading: boolean;
   data: {
-    clients: Client[];
     equipment: Equipment[];
+    clients: Client[];
     serviceOrders: ServiceOrder[];
     parts: Part[];
     services: Service[];
-    suppliers: Supplier[];
     transactions: Transaction[];
+    suppliers: Supplier[];
     fixedExpenses: FixedExpense[];
     mechanics: Mechanic[];
     sellers: Seller[];
-    systemUsers: SystemUser[];
+    users: SystemUser[];
     pdvOrders: PDVOrder[];
     rentals: Rental[];
-    importedInvoices: ImportedInvoice[];
+    company: CompanyData | null;
     companyData: CompanyData | null;
+    importedInvoices: ImportedInvoice[];
+    systemUsers: SystemUser[];
   };
   actions: {
-    add: (col: string, data: any) => Promise<any>;
-    update: (col: string, id: string, data: any) => Promise<void>;
-    remove: (col: string, id: string) => Promise<void>;
-    set: (col: string, id: string, data: any) => Promise<void>;
-    setCompanyData: (data: CompanyData | null) => Promise<void>;
-    setClients: React.Dispatch<React.SetStateAction<Client[]>>;
-    setParts: React.Dispatch<React.SetStateAction<Part[]>>;
-    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-    setPdvOrders: React.Dispatch<React.SetStateAction<PDVOrder[]>>;
-    setServiceOrders: React.Dispatch<React.SetStateAction<ServiceOrder[]>>;
-    setEquipment: React.Dispatch<React.SetStateAction<Equipment[]>>;
-    setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
-    setMechanics: React.Dispatch<React.SetStateAction<Mechanic[]>>;
-    setSellers: React.Dispatch<React.SetStateAction<Seller[]>>;
-    setRentals: React.Dispatch<React.SetStateAction<Rental[]>>;
-    setImportedInvoices: React.Dispatch<React.SetStateAction<ImportedInvoice[]>>;
-    setServices: React.Dispatch<React.SetStateAction<Service[]>>;
-    setFixedExpenses: React.Dispatch<React.SetStateAction<FixedExpense[]>>;
-    setSystemUsers: React.Dispatch<React.SetStateAction<SystemUser[]>>;
+    add: (collection: string, data: any) => Promise<any>;
+    update: (collection: string, id: string, data: any) => Promise<void>;
+    remove: (collection: string, id: string) => Promise<void>;
+    set: (collection: string, id: string, data: any) => Promise<void>;
+    setTransactions: (data: Transaction[]) => void;
+    setClients: (data: Client[]) => void;
+    setServiceOrders: (data: ServiceOrder[]) => void;
+    setEquipment: (data: Equipment[]) => void;
+    setParts: (data: Part[]) => void;
+    setSuppliers: (data: Supplier[]) => void;
+    setMechanics: (data: Mechanic[]) => void;
+    setSellers: (data: Seller[]) => void;
+    setSystemUsers: (data: SystemUser[]) => void;
+    setCompanyData: (data: CompanyData) => void;
+    setPdvOrders: (data: PDVOrder[]) => void;
+    setFixedExpenses: (data: FixedExpense[]) => void;
+    setRentals: (data: Rental[]) => void;
+    setServices: (data: Service[]) => void;
   };
+  login: () => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithEmail: (email: string, pass: string) => Promise<void>;
+  registerWithEmail: (email: string, pass: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-const FirebaseContext = createContext<FirebaseContextType | undefined>(undefined);
+const FirebaseContext = createContext<FirebaseContextType | null>(null);
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+export const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+const MASTER_ADMINS = ['alfamaqmanutencao@gmail.com', 'alfamaqmanutenção@gmail.com'];
 
 export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<SystemUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [userProfile, setUserProfile] = useState<SystemUser | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [isCreatingProfile, setIsCreatingProfile] = useState(false);
-  const [needsProfileUpdate, setNeedsProfileUpdate] = useState(false);
-  const [hasLoadedUsers, setHasLoadedUsers] = useState(false);
-
-  const [clients, setClients] = useState<Client[]>([]);
+  
   const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>([]);
   const [parts, setParts] = useState<Part[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
-  const [systemUsers, setSystemUsers] = useState<SystemUser[]>([]);
-  const [pdvOrders, setPdvOrders] = useState<PDVOrder[]>([]);
+  const [users, setUsers] = useState<SystemUser[]>([]);
+  const [pdvOrders, setPDVOrders] = useState<PDVOrder[]>([]);
   const [rentals, setRentals] = useState<Rental[]>([]);
+  const [company, setCompany] = useState<CompanyData | null>(null);
   const [importedInvoices, setImportedInvoices] = useState<ImportedInvoice[]>([]);
-  const [companyData, setCompanyData] = useState<CompanyData | null>(null);
 
-  const sanitizeData = React.useCallback((obj: any): any => {
-    if (obj === null || obj === undefined) return null;
-    if (typeof obj !== 'object') return obj;
-    if (Array.isArray(obj)) return obj.map(v => sanitizeData(v));
-    
-    // Evita sanitizar objetos que não são literais (como Timestamps do Firebase)
-    if (obj.constructor && obj.constructor.name !== 'Object') return obj;
-
-    const sanitized: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        sanitized[key] = sanitizeData(value);
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(db, 'test', 'connection'));
+      } catch (error: any) {
+        if (error.message?.includes('offline')) {
+          console.error("Firebase connection error: Client is offline");
+        }
       }
-    }
-    return sanitized;
+    };
+    testConnection();
+
+    return onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      if (user) {
+        // Fetch user profile or create one
+        const userDoc = doc(db, 'users', user.uid);
+        
+        // Initial fetch to ensure we have data quickly
+        const snapshot = await getDoc(userDoc);
+        if (snapshot.exists()) {
+          setUserProfile({ id: snapshot.id, ...snapshot.data() } as SystemUser);
+        } else {
+          const profile: Partial<SystemUser> = {
+            name: user.displayName || '',
+            email: user.email || '',
+            role: MASTER_ADMINS.includes(user.email || '') ? 'Admin' : 'Operador',
+            status: 'Ativo'
+          };
+          await setDoc(userDoc, profile, { merge: true });
+          setUserProfile({ id: user.uid, ...profile } as SystemUser);
+        }
+
+        // Live updates
+        const unsubProfile = onSnapshot(userDoc, (snap) => {
+          if (snap.exists()) {
+            setUserProfile({ id: snap.id, ...snap.data() } as SystemUser);
+          }
+        });
+
+        // Set up real-time listeners for all collections
+        const unsubscribers = [
+          unsubProfile,
+          onSnapshot(collection(db, 'equipment'), (snapshot) => {
+            setEquipment(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Equipment)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'equipment')),
+          onSnapshot(collection(db, 'clients'), (snapshot) => {
+            setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'clients')),
+          onSnapshot(collection(db, 'service_orders'), (snapshot) => {
+            setServiceOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'service_orders')),
+          onSnapshot(collection(db, 'parts'), (snapshot) => {
+            setParts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Part)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'parts')),
+          onSnapshot(collection(db, 'services'), (snapshot) => {
+            setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'services')),
+          onSnapshot(collection(db, 'transactions'), (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'transactions')),
+          onSnapshot(collection(db, 'suppliers'), (snapshot) => {
+            setSuppliers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'suppliers')),
+          onSnapshot(collection(db, 'fixed_expenses'), (snapshot) => {
+            setFixedExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FixedExpense)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'fixed_expenses')),
+          onSnapshot(collection(db, 'mechanics'), (snapshot) => {
+            setMechanics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Mechanic)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'mechanics')),
+          onSnapshot(collection(db, 'sellers'), (snapshot) => {
+            setSellers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Seller)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'sellers')),
+          onSnapshot(collection(db, 'users'), (snapshot) => {
+            setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SystemUser)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'users')),
+          onSnapshot(collection(db, 'pdv_orders'), (snapshot) => {
+            setPDVOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PDVOrder)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'pdv_orders')),
+          onSnapshot(collection(db, 'rentals'), (snapshot) => {
+            setRentals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Rental)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'rentals')),
+          onSnapshot(collection(db, 'company'), (snapshot) => {
+            if (!snapshot.empty) {
+              setCompany({ id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as CompanyData);
+            }
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'company')),
+          onSnapshot(collection(db, 'imported_invoices'), (snapshot) => {
+            setImportedInvoices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ImportedInvoice)));
+          }, (error) => handleFirestoreError(error, OperationType.LIST, 'imported_invoices')),
+        ];
+
+        setIsAuthReady(true);
+        setLoading(false);
+        return () => unsubscribers.forEach(unsub => unsub());
+      } else {
+        setIsAuthReady(true);
+        setLoading(false);
+      }
+    });
   }, []);
 
-  const actions = React.useMemo(() => ({
+  const actions = {
     add: async (col: string, data: any) => {
       try {
-        const { id, ...rest } = data;
-        const sanitized = sanitizeData(rest);
-        const finalData = {
-          ...sanitized,
-          createdAt: data.createdAt || new Date().toISOString(),
-          updatedAt: serverTimestamp()
-        };
-        console.log(`Tentando adicionar documento em ${col}...`);
-        const docRef = await addDoc(collection(db, col), finalData);
-        console.log(`Documento adicionado com sucesso em ${col}:`, docRef.id);
-        return docRef;
-      } catch (error: any) {
-        console.error(`Erro ao salvar em ${col}:`, error.message, error.code);
-        throw error;
+        const sanitized = { ...data };
+        Object.keys(sanitized).forEach(key => sanitized[key] === undefined && delete sanitized[key]);
+        return await addDoc(collection(db, col), { ...sanitized, createdAt: serverTimestamp() });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.CREATE, col);
       }
     },
     update: async (col: string, id: string, data: any) => {
       try {
-        const { id: _, ...rest } = data;
-        const sanitized = sanitizeData(rest);
-        console.log(`Tentando atualizar documento ${id} em ${col}...`);
-        // Usar setDoc com merge: true em vez de updateDoc para ser mais robusto
-        // (cria o documento se ele não existir, evitando erro "No document to update")
-        await setDoc(doc(db, col, id), {
-          ...sanitized,
-          updatedAt: serverTimestamp()
+        const sanitized = { ...data };
+        delete sanitized.id;
+        Object.keys(sanitized).forEach(key => sanitized[key] === undefined && delete sanitized[key]);
+        await setDoc(doc(db, col, id), { 
+          ...sanitized, 
+          updatedAt: serverTimestamp() 
         }, { merge: true });
-        console.log(`Documento ${id} atualizado com sucesso em ${col}`);
-      } catch (error: any) {
-        console.error(`Erro ao atualizar em ${col}:`, error.message, error.code);
-        throw error;
+      } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, `${col}/${id}`);
       }
     },
     remove: async (col: string, id: string) => {
-      console.log(`Tentando remover documento ${id} em ${col}...`);
-      return deleteDoc(doc(db, col, id));
+      try {
+        await deleteDoc(doc(db, col, id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `${col}/${id}`);
+      }
     },
     set: async (col: string, id: string, data: any) => {
-      const { id: _, ...rest } = data;
-      const sanitized = sanitizeData(rest);
-      console.log(`Tentando definir documento ${id} em ${col}...`);
-      return setDoc(doc(db, col, id), {
-        ...sanitized,
-        updatedAt: serverTimestamp()
-      });
-    },
-    setCompanyData: async (data: CompanyData | null) => {
-      if (!data) return;
-      const { id, ...rest } = data;
-      const sanitized = sanitizeData(rest);
-      console.log('Salvando configurações da empresa...');
-      return setDoc(doc(db, 'company', 'settings'), {
-        ...sanitized,
-        updatedAt: serverTimestamp()
-      });
-    },
-    setClients,
-    setParts,
-    setTransactions,
-    setPdvOrders,
-    setServiceOrders,
-    setEquipment,
-    setSuppliers,
-    setMechanics,
-    setSellers,
-    setRentals,
-    setImportedInvoices,
-    setServices,
-    setFixedExpenses,
-    setSystemUsers
-  }), [sanitizeData]);
-
-  useEffect(() => {
-    const authTimeout = setTimeout(() => {
-      if (!isAuthReady) {
-        console.warn('Auth timeout: Forcing readiness state.');
-        setIsAuthReady(true);
-        setLoading(false);
-      }
-    }, 10000); // Aumentado para 10 segundos para conexões lentas
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      clearTimeout(authTimeout);
-      console.log('Auth state changed:', user ? 'Logged in' : 'Logged out');
-      setUser(user);
-      setIsAuthReady(true);
-      setLoading(false);
-    }, (error) => {
-      clearTimeout(authTimeout);
-      console.error('Auth error:', error);
-      setIsAuthReady(true);
-      setLoading(false);
-    });
-
-    return () => {
-      unsubscribe();
-      clearTimeout(authTimeout);
-    };
-  }, [isAuthReady]);
-
-  // Sync user profile when user or systemUsers data changes
-  useEffect(() => {
-    const MASTER_ADMINS = ['alfamaqmanutencao@gmail.com', 'alfamaqmanutenção@gmail.com'];
-    
-    if (user && !isCreatingProfile) {
-      const profile = systemUsers.find(u => u.email === user.email);
-      if (profile) {
-        setUserProfile(profile);
-        const isMaster = MASTER_ADMINS.includes(user.email || '');
-        setIsAdmin(profile.role === 'Admin' || isMaster);
-        setIsAuthorized(profile.status === 'Ativo' || isMaster);
-        // Verificar se faltam dados obrigatórios (exceto para o admin mestre se ele já estiver ativo)
-        const isMissingData = !profile.cpf || !profile.phone || !profile.name;
-        setNeedsProfileUpdate(isMissingData && !isMaster);
-      } else if (isAuthReady && hasLoadedUsers && !isCreatingProfile) {
-        // Se a lista de usuários já carregou e não achou, pode ser um novo usuário
-        // Verificação extra de segurança para evitar duplicatas em disparos rápidos do useEffect
-        const exists = systemUsers.some(u => u.email === user.email);
-        if (exists) return;
-
-        setIsCreatingProfile(true);
-        if (MASTER_ADMINS.includes(user.email || '')) {
-          const newAdmin: SystemUser = {
-            id: '',
-            name: 'ALFAMAQ MANUTENÇÕES',
-            email: user.email!,
-            role: 'Admin',
-            status: 'Ativo',
-            lastLogin: new Date().toISOString()
-          };
-          actions.add('users', newAdmin).finally(() => setIsCreatingProfile(false));
-          setIsAdmin(true);
-          setIsAuthorized(true);
-        } else {
-          const newUser: SystemUser = {
-            id: '',
-            name: user.displayName || user.email!.split('@')[0],
-            email: user.email!,
-            role: 'Operador',
-            status: 'Inativo',
-            lastLogin: new Date().toISOString()
-          };
-          actions.add('users', newUser).finally(() => setIsCreatingProfile(false));
-          setIsAuthorized(false);
-        }
-      }
-    } else if (!user) {
-      setUserProfile(null);
-      setIsAdmin(false);
-      setIsAuthorized(false);
-    }
-  }, [user, systemUsers, isAuthReady, isCreatingProfile, hasLoadedUsers, actions]);
-
-  // Test connection
-  useEffect(() => {
-    async function testConnection() {
       try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
+        const sanitized = { ...data };
+        Object.keys(sanitized).forEach(key => sanitized[key] === undefined && delete sanitized[key]);
+        await setDoc(doc(db, col, id), { 
+          ...sanitized, 
+          updatedAt: serverTimestamp() 
+        }, { merge: true });
       } catch (error) {
-        if (error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
+        handleFirestoreError(error, OperationType.WRITE, `${col}/${id}`);
       }
-    }
-    testConnection();
-  }, []);
-
-  useEffect(() => {
-    if (!user) return;
-
-    const unsubscribes = [
-      onSnapshot(collection(db, 'clients'), (snapshot) => {
-        setClients(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client)));
-      }),
-      onSnapshot(collection(db, 'equipment'), (snapshot) => {
-        setEquipment(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Equipment)));
-      }),
-      onSnapshot(collection(db, 'service_orders'), (snapshot) => {
-        setServiceOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceOrder)));
-      }),
-      onSnapshot(collection(db, 'parts'), (snapshot) => {
-        setParts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Part)));
-      }),
-      onSnapshot(collection(db, 'services'), (snapshot) => {
-        setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Service)));
-      }),
-      onSnapshot(collection(db, 'suppliers'), (snapshot) => {
-        setSuppliers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Supplier)));
-      }),
-      onSnapshot(collection(db, 'transactions'), (snapshot) => {
-        setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Transaction)));
-      }),
-      onSnapshot(collection(db, 'fixed_expenses'), (snapshot) => {
-        setFixedExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FixedExpense)));
-      }),
-      onSnapshot(collection(db, 'mechanics'), (snapshot) => {
-        setMechanics(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Mechanic)));
-      }),
-      onSnapshot(collection(db, 'sellers'), (snapshot) => {
-        setSellers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Seller)));
-      }),
-      onSnapshot(collection(db, 'users'), (snapshot) => {
-        setSystemUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SystemUser)));
-        setHasLoadedUsers(true);
-      }),
-      onSnapshot(collection(db, 'pdv_orders'), (snapshot) => {
-        setPdvOrders(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PDVOrder)));
-      }),
-      onSnapshot(collection(db, 'rentals'), (snapshot) => {
-        setRentals(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Rental)));
-      }),
-      onSnapshot(collection(db, 'imported_invoices'), (snapshot) => {
-        setImportedInvoices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ImportedInvoice)));
-      }),
-      onSnapshot(doc(db, 'company', 'settings'), (doc) => {
-        if (doc.exists()) {
-          setCompanyData({ id: doc.id, ...doc.data() } as CompanyData);
-        }
-      })
-    ];
-
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, [user]);
-
-  const login = async () => {
-    if (isLoggingIn) return;
-    setIsLoggingIn(true);
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      console.error('Login error:', error);
-      if (error.code === 'auth/cancelled-popup-request') {
-        console.warn('Login popup was cancelled or a previous request was still pending.');
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        console.log('User closed the login popup.');
-      } else if (error.code === 'auth/invalid-credential') {
-        alert('Erro: Credenciais inválidas. Verifique se as configurações do Firebase estão corretas em seu projeto do Google Cloud.');
-      } else if (error.code === 'auth/unauthorized-domain') {
-        alert('Este domínio não está autorizado no console do Firebase. Adicione este domínio na lista de domínios autorizados.');
+    },
+    setTransactions: (data: Transaction[]) => setTransactions(data),
+    setClients: (data: Client[]) => setClients(data),
+    setServiceOrders: (data: ServiceOrder[]) => setServiceOrders(data),
+    setEquipment: (data: Equipment[]) => setEquipment(data),
+    setParts: (data: Part[]) => setParts(data),
+    setSuppliers: (data: Supplier[]) => setSuppliers(data),
+    setMechanics: (data: Mechanic[]) => setMechanics(data),
+    setSellers: (data: Seller[]) => setSellers(data),
+    setSystemUsers: (data: SystemUser[]) => setUsers(data),
+    setCompanyData: (data: CompanyData) => {
+      if (company?.id) {
+        actions.update('company', company.id, data);
       } else {
-        alert(`Erro ao realizar login: ${error.message}`);
-        throw error;
+        actions.add('company', data);
       }
-    } finally {
-      setIsLoggingIn(false);
+    },
+    setPdvOrders: (data: PDVOrder[]) => setPDVOrders(data),
+    setFixedExpenses: (data: FixedExpense[]) => setFixedExpenses(data),
+    setRentals: (data: Rental[]) => setRentals(data),
+    setServices: (data: Service[]) => setServices(data)
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+      console.error("Login error:", error);
     }
   };
 
@@ -398,45 +356,65 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
   };
 
   const registerWithEmail = async (email: string, pass: string) => {
-    await createUserWithEmailAndPassword(auth, email, pass);
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    if (cred.user) {
+      const userDoc = doc(db, 'users', cred.user.uid);
+      const profile: Partial<SystemUser> = {
+        name: '',
+        email: email,
+        role: 'Operador',
+        status: 'Inativo'
+      };
+      await setDoc(userDoc, profile);
+    }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
+
+  const isAdmin = MASTER_ADMINS.includes(user?.email || '') || userProfile?.role === 'Admin';
+  const isAuthorized = isAdmin || userProfile?.status === 'Ativo';
+  const needsProfileUpdate = !!user && (!userProfile?.name || !userProfile?.cpf || !userProfile?.phone);
 
   return (
     <FirebaseContext.Provider value={{ 
       user, 
-      loading, 
-      isAuthReady, 
-      isLoggingIn,
+      userProfile, 
+      isAdmin, 
       isAuthorized,
-      isAdmin,
-      userProfile,
+      isAuthReady,
       needsProfileUpdate,
-      login, 
-      loginWithEmail,
-      registerWithEmail,
-      logout,
+      loading, 
       data: {
-        clients,
         equipment,
+        clients,
         serviceOrders,
         parts,
         services,
-        suppliers,
         transactions,
+        suppliers,
         fixedExpenses,
         mechanics,
         sellers,
-        systemUsers,
+        users,
         pdvOrders,
         rentals,
+        company,
+        companyData: company,
         importedInvoices,
-        companyData
+        systemUsers: users
       },
-      actions
+      actions,
+      login: loginWithGoogle,
+      loginWithGoogle,
+      loginWithEmail,
+      registerWithEmail,
+      logout
     }}>
       {children}
     </FirebaseContext.Provider>
@@ -445,8 +423,6 @@ export function FirebaseProvider({ children }: { children: React.ReactNode }) {
 
 export function useFirebase() {
   const context = useContext(FirebaseContext);
-  if (context === undefined) {
-    throw new Error('useFirebase must be used within a FirebaseProvider');
-  }
+  if (!context) throw new Error('useFirebase must be used within FirebaseProvider');
   return context;
 }

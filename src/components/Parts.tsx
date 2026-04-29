@@ -150,11 +150,16 @@ export default function Parts({
     });
 
     // 2. Filtrar por busca
-    return uniqueList.filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.additionalCodes?.some(c => c.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const search = searchTerm.toLowerCase();
+    return uniqueList.filter(p => {
+      const name = p?.name?.toLowerCase() || '';
+      const code = p?.code?.toLowerCase() || '';
+      const additionalCodes = p?.additionalCodes || [];
+      
+      return name.includes(search) || 
+             code.includes(search) ||
+             additionalCodes.some(c => c?.toLowerCase()?.includes(search));
+    });
   })();
 
   const handleOpenModal = (part?: Part) => {

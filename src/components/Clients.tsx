@@ -340,15 +340,26 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
     });
 
     // 2. Filtrar por Status e Busca
+    const search = searchTerm.toLowerCase();
+    const searchClean = searchTerm.replace(/\D/g, '');
+
     return uniqueList.filter(client => {
       const matchesStatus = statusFilter === 'Todos' || client.status === statusFilter;
+      
+      const name = client?.name?.toLowerCase() || '';
+      const document = client?.document || '';
+      const email = client?.email?.toLowerCase() || '';
+      const tradeName = client?.tradeName?.toLowerCase() || '';
+      const phone = client?.phone?.replace(/\D/g, '') || '';
+      const mobile = client?.mobile?.replace(/\D/g, '') || '';
+
       const matchesSearch = 
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (client.document && client.document.includes(searchTerm)) ||
-        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (client.phone && client.phone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''))) ||
-        (client.mobile && client.mobile.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')));
+        name.includes(search) ||
+        document.includes(searchTerm) ||
+        email.includes(search) ||
+        tradeName.includes(search) ||
+        (searchClean && phone.includes(searchClean)) ||
+        (searchClean && mobile.includes(searchClean));
       
       return matchesStatus && matchesSearch;
     });

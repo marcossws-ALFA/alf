@@ -214,12 +214,19 @@ export default function EquipmentView({ equipmentList, setEquipmentList, clients
   };
 
   const filteredEquipment = equipmentList.filter(eq => {
+    const brand = eq?.brand?.toLowerCase() || '';
+    const model = eq?.model?.toLowerCase() || '';
+    const owner = eq?.owner?.toLowerCase() || '';
+    const type = eq?.type?.toLowerCase() || '';
+    const serialNumber = eq?.serialNumber?.toLowerCase() || '';
+    const search = searchTerm.toLowerCase();
+
     const matchesSearch = 
-      eq.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (eq.serialNumber && eq.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()));
+      brand.includes(search) ||
+      model.includes(search) ||
+      owner.includes(search) ||
+      type.includes(search) ||
+      serialNumber.includes(search);
     
     const matchesStatus = statusFilter === 'Todos' || eq.status === statusFilter;
     

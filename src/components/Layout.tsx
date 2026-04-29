@@ -22,7 +22,8 @@ import {
   Building2,
   CalendarDays,
   Menu,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
@@ -73,6 +74,7 @@ export default function Layout({
     { id: 'parts', label: 'Peças / Estoque', icon: Package },
     { id: 'services', label: 'Serviços', icon: Wrench },
     { id: 'finance', label: 'Financeiro', icon: TrendingUp, adminOnly: true },
+    { id: 'imported-invoices', label: 'Notas Fiscais Importadas', icon: FileText },
     { id: 'settings', label: 'Configurações', icon: SettingsIcon, adminOnly: true },
   ];
 
@@ -90,6 +92,7 @@ export default function Layout({
     'receivables': 'Contas a Receber',
     'payables': 'Contas a Pagar',
     'suppliers': 'Fornecedores',
+    'imported-invoices': 'Notas Fiscais Importadas',
     'settings': 'Configurações',
     'rentals': 'Locação',
     'support': 'Suporte'

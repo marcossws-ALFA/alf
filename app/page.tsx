@@ -15,6 +15,7 @@ import Suppliers from '@/src/components/Suppliers';
 import Settings from '@/src/components/Settings';
 import Rentals from '@/src/components/Rentals';
 import PDV from '@/src/components/PDV';
+import ImportedInvoicesList from '@/src/components/ImportedInvoicesList';
 import { View, Equipment as EquipmentType, Client, ServiceOrder, Part, Service, Transaction, Supplier, FixedExpense, Mechanic, Seller, SystemUser, PDVOrder, Rental, CompanyData } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
 import { LogIn, QrCode, Lock, LogOut, TrendingUp } from 'lucide-react';
@@ -497,6 +498,8 @@ export default function Home() {
             onViewChange={(view) => setCurrentView(view)}
           />
         );
+      case 'imported-invoices':
+        return <ImportedInvoicesList invoices={data.importedInvoices} />;
       case 'receivables':
         return (
           <Receivables 
