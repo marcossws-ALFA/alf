@@ -948,11 +948,16 @@ export default function ServiceOrders({
           {orders
             .filter(order => {
               const search = osSearchTerm.toLowerCase();
+              const number = order?.number?.toLowerCase() || '';
+              const clientName = order?.clientName?.toLowerCase() || '';
+              const clientDocument = order?.clientDocument?.toLowerCase() || '';
+              const clientPhone = order?.clientPhone?.toLowerCase() || '';
+              
               const matchesSearch = (
-                order.number.toLowerCase().includes(search) ||
-                order.clientName.toLowerCase().includes(search) ||
-                order.clientDocument.toLowerCase().includes(search) ||
-                order.clientPhone.toLowerCase().includes(search)
+                number.includes(search) ||
+                clientName.includes(search) ||
+                clientDocument.includes(search) ||
+                clientPhone.includes(search)
               );
               const matchesStatus = statusFilter === 'TODOS' || order.status === statusFilter;
               return matchesSearch && matchesStatus;

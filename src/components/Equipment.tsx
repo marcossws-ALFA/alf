@@ -162,12 +162,13 @@ export default function EquipmentView({ equipmentList, setEquipmentList, clients
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    doc.save(`relatorio-equipamentos-${filter.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    const fileName = (filter || 'relatorio').toLowerCase().replace(/\s+/g, '-');
+    doc.save(`relatorio-equipamentos-${fileName}.pdf`);
     setIsDownloadMenuOpen(false);
     setShowClientsInDownload(false);
   };
 
-  const uniqueOwners = Array.from(new Set(equipmentList.map(eq => eq.owner))).sort();
+  const uniqueOwners = Array.from(new Set(equipmentList.map(eq => eq.owner || 'Sem Proprietário'))).sort();
 
   const openModal = (equipment: EquipmentType | null = null) => {
     setEditingEquipment(equipment);
@@ -420,11 +421,11 @@ export default function EquipmentView({ equipmentList, setEquipmentList, clients
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-[#e0e0ff]/30 flex items-center justify-center text-[#000666]">
-                        {eq.type.toLowerCase().includes('trator') && <Forklift size={18} />}
-                        {eq.type.toLowerCase().includes('gerador') && <Zap size={18} />}
-                        {eq.type.toLowerCase().includes('lavadora') && <Settings size={18} />}
-                        {eq.type.toLowerCase().includes('motosserra') && <Cpu size={18} />}
-                        {!['trator', 'gerador', 'lavadora', 'motosserra'].some(k => eq.type.toLowerCase().includes(k)) && <Settings size={18} />}
+                        {(eq?.type?.toLowerCase() || '').includes('trator') && <Forklift size={18} />}
+                        {(eq?.type?.toLowerCase() || '').includes('gerador') && <Zap size={18} />}
+                        {(eq?.type?.toLowerCase() || '').includes('lavadora') && <Settings size={18} />}
+                        {(eq?.type?.toLowerCase() || '').includes('motosserra') && <Cpu size={18} />}
+                        {!['trator', 'gerador', 'lavadora', 'motosserra'].some(k => (eq?.type?.toLowerCase() || '').includes(k)) && <Settings size={18} />}
                       </div>
                       <span className="text-sm font-medium text-[#1b1b21]">{eq.type}</span>
                     </div>
