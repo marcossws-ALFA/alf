@@ -49,9 +49,17 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
   const recentOrders = React.useMemo(() => {
     return [...orders].sort((a, b) => {
       try {
-        const dateA = a.createdAt && typeof a.createdAt === 'string' ? new Date(a.createdAt.split('/').reverse().join('-')).getTime() : 0;
-        const dateB = b.createdAt && typeof b.createdAt === 'string' ? new Date(b.createdAt.split('/').reverse().join('-')).getTime() : 0;
-        return dateB - dateA;
+        const parseDate = (d: string) => {
+          if (!d || typeof d !== 'string') return 0;
+          const parts = d.split('/');
+          if (parts.length === 3) {
+            return new Date(parts[2] + '-' + parts[1] + '-' + parts[0]).getTime();
+          }
+          return new Date(d).getTime() || 0;
+        };
+        const dateA = parseDate(a.createdAt);
+        const dateB = parseDate(b.createdAt);
+        return (dateB || 0) - (dateA || 0);
       } catch (e) {
         return 0;
       }
@@ -74,11 +82,22 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
     const currentYear = new Date().getFullYear();
     
     const data = months.map((month, index) => {
+      const parseDate = (d: string) => {
+        if (!d || typeof d !== 'string') return null;
+        const parts = d.split('/');
+        if (parts.length === 3) {
+          return new Date(parts[2] + '-' + parts[1] + '-' + parts[0]);
+        }
+        const parsed = new Date(d);
+        return isNaN(parsed.getTime()) ? null : parsed;
+      };
+
       const revenue = transactions
         .filter(tx => {
-          if (!tx.date || typeof tx.date !== 'string') return false;
+          if (!tx.date) return false;
           try {
-            const txDate = new Date(tx.date.split('/').reverse().join('-'));
+            const txDate = parseDate(tx.date);
+            if (!txDate) return false;
             return tx.type === 'Receita' && 
                    tx.status === 'Pago' && 
                    txDate.getMonth() === index && 
@@ -91,9 +110,10 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
 
       const previousRevenue = transactions
         .filter(tx => {
-          if (!tx.date || typeof tx.date !== 'string') return false;
+          if (!tx.date) return false;
           try {
-            const txDate = new Date(tx.date.split('/').reverse().join('-'));
+            const txDate = parseDate(tx.date);
+            if (!txDate) return false;
             return tx.type === 'Receita' && 
                    tx.status === 'Pago' && 
                    txDate.getMonth() === index && 

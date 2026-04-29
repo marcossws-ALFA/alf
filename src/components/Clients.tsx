@@ -103,7 +103,8 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    doc.save(`relatorio-clientes-${filter.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+    const fileName = (filter || 'relatorio').toLowerCase().replace(/\s+/g, '-');
+    doc.save(`relatorio-clientes-${fileName}.pdf`);
     setIsDownloadMenuOpen(false);
   };
 

@@ -112,16 +112,16 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
 
     // Remover duplicados por e-mail antes de filtrar por busca
     const uniqueList = rawList.filter((item, index, self) => {
-      if (!item.email) return true;
+      const email = (item.email || '').toLowerCase().trim();
+      if (!email) return true;
       
-      const email = item.email.toLowerCase().trim();
       // Normalizar e-mails admins master para serem tratados como o mesmo
       const normalizedEmail = (email === 'alfamaqmanutencao@gmail.com' || email === 'alfamaqmanutenção@gmail.com') 
         ? 'master_admin' 
         : email;
 
       return index === self.findIndex((t) => {
-        const tEmail = t.email?.toLowerCase().trim();
+        const tEmail = (t.email || '').toLowerCase().trim();
         const tNormalized = (tEmail === 'alfamaqmanutencao@gmail.com' || tEmail === 'alfamaqmanutenção@gmail.com')
           ? 'master_admin'
           : tEmail;
@@ -129,10 +129,13 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
       });
     });
 
-    return uniqueList.filter(item => 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.email && item.email.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    return uniqueList.filter(item => {
+      const name = (item.name || '').toLowerCase();
+      const email = (item.email || '').toLowerCase();
+      const search = (searchTerm || '').toLowerCase();
+
+      return name.includes(search) || email.includes(search);
+    });
   })();
 
   const handleOpenModal = (item?: Mechanic | Seller | SystemUser) => {
