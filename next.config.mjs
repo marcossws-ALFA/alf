@@ -29,6 +29,21 @@ const nextConfig = {
       }
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Prevent firebase-admin from being bundled in the client
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+        dns: false,
+        os: false,
+      };
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
