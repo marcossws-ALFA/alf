@@ -109,7 +109,9 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || firebaseConfigJson.storageBucket,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigJson.messagingSenderId,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || firebaseConfigJson.appId,
-  firestoreDatabaseId: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || (firebaseConfigJson as any).firestoreDatabaseId
+  firestoreDatabaseId: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_ID || (firebaseConfigJson as any).firestoreDatabaseId,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || (firebaseConfigJson as any).databaseURL,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || (firebaseConfigJson as any).measurementId
 };
 
 const app = initializeApp(firebaseConfig);
