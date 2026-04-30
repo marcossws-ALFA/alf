@@ -77,12 +77,8 @@ export default function Finance({
   });
 
   const filteredTransactions = transactions.filter(tx => {
-    const description = tx?.description?.toLowerCase() || '';
-    const entity = tx?.entity?.toLowerCase() || '';
-    const search = searchTerm.toLowerCase();
-
-    const matchesSearch = description.includes(search) || 
-                         entity.includes(search);
+    const matchesSearch = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         tx.entity.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = filterType === 'Todos' || tx.type === filterType;
     return matchesSearch && matchesType;
   });

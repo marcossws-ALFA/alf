@@ -103,8 +103,7 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
       styles: { fontSize: 8, cellPadding: 3 }
     });
 
-    const fileName = (filter || 'relatorio').toLowerCase().replace(/\s+/g, '-');
-    doc.save(`relatorio-clientes-${fileName}.pdf`);
+    doc.save(`relatorio-clientes-${filter.toLowerCase().replace(/\s+/g, '-')}.pdf`);
     setIsDownloadMenuOpen(false);
   };
 
@@ -341,26 +340,15 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
     });
 
     // 2. Filtrar por Status e Busca
-    const search = searchTerm.toLowerCase();
-    const searchClean = searchTerm.replace(/\D/g, '');
-
     return uniqueList.filter(client => {
       const matchesStatus = statusFilter === 'Todos' || client.status === statusFilter;
-      
-      const name = client?.name?.toLowerCase() || '';
-      const document = client?.document || '';
-      const email = client?.email?.toLowerCase() || '';
-      const tradeName = client?.tradeName?.toLowerCase() || '';
-      const phone = client?.phone?.replace(/\D/g, '') || '';
-      const mobile = client?.mobile?.replace(/\D/g, '') || '';
-
       const matchesSearch = 
-        name.includes(search) ||
-        document.includes(searchTerm) ||
-        email.includes(search) ||
-        tradeName.includes(search) ||
-        (searchClean && phone.includes(searchClean)) ||
-        (searchClean && mobile.includes(searchClean));
+        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (client.document && client.document.includes(searchTerm)) ||
+        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (client.phone && client.phone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''))) ||
+        (client.mobile && client.mobile.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')));
       
       return matchesStatus && matchesSearch;
     });
@@ -827,11 +815,11 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
                         >
                           <div className="flex items-center gap-4 text-left">
                             <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000666] group-hover/eq:bg-[#000666] group-hover/eq:text-white transition-colors">
-                              {(eq?.type?.toLowerCase() || '').includes('trator') && <Forklift size={24} />}
-                              {(eq?.type?.toLowerCase() || '').includes('gerador') && <Zap size={24} />}
-                              {(eq?.type?.toLowerCase() || '').includes('lavadora') && <Settings size={24} />}
-                              {(eq?.type?.toLowerCase() || '').includes('motosserra') && <Cpu size={24} />}
-                              {!['trator', 'gerador', 'lavadora', 'motosserra'].some(k => (eq?.type?.toLowerCase() || '').includes(k)) && <Settings size={24} />}
+                              {eq.type.toLowerCase().includes('trator') && <Forklift size={24} />}
+                              {eq.type.toLowerCase().includes('gerador') && <Zap size={24} />}
+                              {eq.type.toLowerCase().includes('lavadora') && <Settings size={24} />}
+                              {eq.type.toLowerCase().includes('motosserra') && <Cpu size={24} />}
+                              {!['trator', 'gerador', 'lavadora', 'motosserra'].some(k => eq.type.toLowerCase().includes(k)) && <Settings size={24} />}
                             </div>
                             <div>
                               <p className="text-sm font-bold text-[#1b1b21]">{eq.type}</p>

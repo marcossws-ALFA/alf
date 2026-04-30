@@ -1,6 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'standalone',
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -28,21 +28,6 @@ const nextConfig = {
         pathname: '/**',
       }
     ],
-  },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Prevent firebase-admin from being bundled in the client
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-        child_process: false,
-        dns: false,
-        os: false,
-      };
-    }
-    return config;
   },
 };
 

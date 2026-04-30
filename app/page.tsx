@@ -15,7 +15,6 @@ import Suppliers from '@/src/components/Suppliers';
 import Settings from '@/src/components/Settings';
 import Rentals from '@/src/components/Rentals';
 import PDV from '@/src/components/PDV';
-import ImportedInvoicesList from '@/src/components/ImportedInvoicesList';
 import { View, Equipment as EquipmentType, Client, ServiceOrder, Part, Service, Transaction, Supplier, FixedExpense, Mechanic, Seller, SystemUser, PDVOrder, Rental, CompanyData } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
 import { LogIn, QrCode, Lock, LogOut, TrendingUp } from 'lucide-react';
@@ -122,16 +121,11 @@ export default function Home() {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      let msg = 'Erro ao realizar autenticação. Verifique seus dados.';
-      
-      if (error.code === 'auth/user-not-found') msg = 'Usuário não encontrado.';
-      else if (error.code === 'auth/wrong-password') msg = 'Senha incorreta.';
-      else if (error.code === 'auth/email-already-in-use') msg = 'Este e-mail já está em uso.';
-      else if (error.code === 'auth/weak-password') msg = 'A senha deve ter pelo menos 6 caracteres.';
-      else if (error.code === 'auth/invalid-credential') msg = 'Credenciais inválidas. O e-mail ou a senha podem estar incorretos, ou sua conta pode estar desativada.';
-      else if (error.code === 'auth/network-request-failed') msg = 'Falha na conexão. Verifique sua internet.';
-      else if (error.code === 'auth/too-many-requests') msg = 'Muitas tentativas falhas. Tente novamente mais tarde.';
-      
+      const msg = error.code === 'auth/user-not-found' ? 'Usuário não encontrado.' :
+                  error.code === 'auth/wrong-password' ? 'Senha incorreta.' :
+                  error.code === 'auth/email-already-in-use' ? 'Este e-mail já está em uso.' :
+                  error.code === 'auth/weak-password' ? 'A senha deve ter pelo menos 6 caracteres.' :
+                  'Erro ao realizar autenticação. Verifique seus dados.';
       alert(msg);
     } finally {
       setIsAuthProcessing(false);
@@ -498,8 +492,6 @@ export default function Home() {
             onViewChange={(view) => setCurrentView(view)}
           />
         );
-      case 'imported-invoices':
-        return <ImportedInvoicesList invoices={data.importedInvoices} />;
       case 'receivables':
         return (
           <Receivables 

@@ -245,12 +245,8 @@ export default function Receivables({ transactions, setTransactions, clients, se
   };
 
   const filteredReceivables = receivables.filter(tx => {
-    const description = tx?.description?.toLowerCase() || '';
-    const entity = tx?.entity?.toLowerCase() || '';
-    const search = searchTerm.toLowerCase();
-
-    const matchesSearch = description.includes(search) || 
-                         entity.includes(search);
+    const matchesSearch = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         tx.entity.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'Todos' || tx.status === statusFilter;
     return matchesSearch && matchesStatus;
   });

@@ -243,35 +243,23 @@ export default function ServiceOrders({
     });
   };
 
-  const filteredPartsList = partsList.filter(p => {
-    const name = p?.name?.toLowerCase() || '';
-    const code = p?.code?.toLowerCase() || '';
-    const search = partSearchTerm.toLowerCase();
-    const matchesAdditional = p?.additionalCodes?.some(c => c?.toLowerCase().includes(search)) || false;
-    
-    return name.includes(search) || code.includes(search) || matchesAdditional;
-  });
+  const filteredPartsList = partsList.filter(p => 
+    p.name.toLowerCase().includes(partSearchTerm.toLowerCase()) || 
+    p.code.toLowerCase().includes(partSearchTerm.toLowerCase()) ||
+    p.additionalCodes?.some(c => c.toLowerCase().includes(partSearchTerm.toLowerCase()))
+  );
 
-  const filteredServicesList = servicesList.filter(s => {
-    const name = s?.name?.toLowerCase() || '';
-    const code = s?.code?.toLowerCase() || '';
-    const search = serviceSearchTerm.toLowerCase();
-    
-    return name.includes(search) || code.includes(search);
-  });
+  const filteredServicesList = servicesList.filter(s => 
+    s.name.toLowerCase().includes(serviceSearchTerm.toLowerCase()) || 
+    s.code.toLowerCase().includes(serviceSearchTerm.toLowerCase())
+  );
 
-  const filteredClients = clients.filter(c => {
-    const name = c?.name?.toLowerCase() || '';
-    const document = c?.document?.toLowerCase() || '';
-    const phone = c?.phone?.toLowerCase() || '';
-    const mobile = c?.mobile?.toLowerCase() || '';
-    const search = clientSearchTerm.toLowerCase();
-    
-    return name.includes(search) || 
-           document.includes(search) || 
-           phone.includes(search) || 
-           mobile.includes(search);
-  });
+  const filteredClients = clients.filter(c => 
+    c.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) || 
+    c.document.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    c.phone.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    c.mobile.toLowerCase().includes(clientSearchTerm.toLowerCase())
+  );
 
   const formatCurrency = (value: string) => {
     const digits = value.replace(/\D/g, '');
@@ -635,16 +623,11 @@ export default function ServiceOrders({
   const handleExport = () => {
     const filteredOrders = orders.filter(order => {
       const search = osSearchTerm.toLowerCase();
-      const number = order?.number?.toLowerCase() || '';
-      const clientName = order?.clientName?.toLowerCase() || '';
-      const clientDocument = order?.clientDocument?.toLowerCase() || '';
-      const clientPhone = order?.clientPhone?.toLowerCase() || '';
-      
       const matchesSearch = (
-        number.includes(search) ||
-        clientName.includes(search) ||
-        clientDocument.includes(search) ||
-        clientPhone.includes(search)
+        order.number.toLowerCase().includes(search) ||
+        order.clientName.toLowerCase().includes(search) ||
+        order.clientDocument.toLowerCase().includes(search) ||
+        order.clientPhone.toLowerCase().includes(search)
       );
       const matchesStatus = statusFilter === 'TODOS' || order.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -684,16 +667,11 @@ export default function ServiceOrders({
   const handleDownloadPDF = () => {
     const filteredOrders = orders.filter(order => {
       const search = osSearchTerm.toLowerCase();
-      const number = order?.number?.toLowerCase() || '';
-      const clientName = order?.clientName?.toLowerCase() || '';
-      const clientDocument = order?.clientDocument?.toLowerCase() || '';
-      const clientPhone = order?.clientPhone?.toLowerCase() || '';
-      
       const matchesSearch = (
-        number.includes(search) ||
-        clientName.includes(search) ||
-        clientDocument.includes(search) ||
-        clientPhone.includes(search)
+        order.number.toLowerCase().includes(search) ||
+        order.clientName.toLowerCase().includes(search) ||
+        order.clientDocument.toLowerCase().includes(search) ||
+        order.clientPhone.toLowerCase().includes(search)
       );
       const matchesStatus = statusFilter === 'TODOS' || order.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -832,18 +810,12 @@ export default function ServiceOrders({
               {orders
                 .filter(order => {
                   const search = osSearchTerm.toLowerCase();
-                  const number = order?.number?.toLowerCase() || '';
-                  const clientName = order?.clientName?.toLowerCase() || '';
-                  const clientDocument = order?.clientDocument?.toLowerCase() || '';
-                  const clientPhone = order?.clientPhone?.toLowerCase() || '';
-                  const technician = order?.technician?.toLowerCase() || '';
-                  
                   const matchesSearch = (
-                    number.includes(search) ||
-                    clientName.includes(search) ||
-                    clientDocument.includes(search) ||
-                    clientPhone.includes(search) ||
-                    technician.includes(search)
+                    order.number.toLowerCase().includes(search) ||
+                    order.clientName.toLowerCase().includes(search) ||
+                    order.clientDocument.toLowerCase().includes(search) ||
+                    order.clientPhone.toLowerCase().includes(search) ||
+                    (order.technician && order.technician.toLowerCase().includes(search))
                   );
                   const matchesStatus = statusFilter === 'TODOS' || order.status === statusFilter;
                   return matchesSearch && matchesStatus;
@@ -948,16 +920,11 @@ export default function ServiceOrders({
           {orders
             .filter(order => {
               const search = osSearchTerm.toLowerCase();
-              const number = order?.number?.toLowerCase() || '';
-              const clientName = order?.clientName?.toLowerCase() || '';
-              const clientDocument = order?.clientDocument?.toLowerCase() || '';
-              const clientPhone = order?.clientPhone?.toLowerCase() || '';
-              
               const matchesSearch = (
-                number.includes(search) ||
-                clientName.includes(search) ||
-                clientDocument.includes(search) ||
-                clientPhone.includes(search)
+                order.number.toLowerCase().includes(search) ||
+                order.clientName.toLowerCase().includes(search) ||
+                order.clientDocument.toLowerCase().includes(search) ||
+                order.clientPhone.toLowerCase().includes(search)
               );
               const matchesStatus = statusFilter === 'TODOS' || order.status === statusFilter;
               return matchesSearch && matchesStatus;

@@ -23,15 +23,11 @@ export default function ImportedInvoicesList({ invoices }: ImportedInvoicesListP
   const { actions } = useFirebase();
   const [searchTerm, setSearchTerm] = React.useState('');
 
-  const filteredInvoices = invoices.filter(inv => {
-    const invoiceNumber = inv?.invoiceNumber?.toLowerCase() || '';
-    const issuerName = inv?.issuerName?.toLowerCase() || '';
-    const search = searchTerm.toLowerCase();
-    
-    return invoiceNumber.includes(search) ||
-           issuerName.includes(search) ||
-           (inv?.issuerDocument && inv.issuerDocument.includes(searchTerm));
-  }).sort((a, b) => new Date(b.importedAt).getTime() - new Date(a.importedAt).getTime());
+  const filteredInvoices = invoices.filter(inv => 
+    inv.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    inv.issuerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    inv.issuerDocument.includes(searchTerm)
+  ).sort((a, b) => new Date(b.importedAt).getTime() - new Date(a.importedAt).getTime());
 
   const handleDelete = async (id: string) => {
     if (confirm('Deseja excluir este registro de importação? (As transações financeiras geradas não serão removidas automaticamente)')) {

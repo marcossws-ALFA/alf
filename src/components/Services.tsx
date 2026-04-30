@@ -78,13 +78,10 @@ export default function Services({ services, setServices }: ServicesProps) {
     description: ''
   });
 
-  const filteredServices = services.filter(s => {
-    const name = s?.name?.toLowerCase() || '';
-    const code = s?.code?.toLowerCase() || '';
-    const search = searchTerm.toLowerCase();
-    
-    return name.includes(search) || code.includes(search);
-  });
+  const filteredServices = services.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    s.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleOpenModal = (service?: Service) => {
     setIsAddingCategory(false);

@@ -21,8 +21,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { Supplier, Transaction } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
-import SupplierFormModal from './SupplierFormModal';
-import XMLImportPayableModal from './XMLImportPayableModal';
 
 interface SuppliersProps {
   suppliers: Supplier[];
@@ -49,13 +47,10 @@ export default function Suppliers({ suppliers, setSuppliers, transactions, onUns
     };
   }, [isXMLModalOpen, isModalOpen, onUnsavedChanges]);
 
-  const filteredSuppliers = suppliers.filter(s => {
-    const name = s?.name?.toLowerCase() || '';
-    const document = s?.document || '';
-    const search = searchTerm.toLowerCase();
-    
-    return name.includes(search) || document.includes(searchTerm);
-  });
+  const filteredSuppliers = suppliers.filter(s => 
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.document.includes(searchTerm)
+  );
 
   const handleOpenModal = (supplier?: Supplier) => {
     setEditingSupplier(supplier || null);

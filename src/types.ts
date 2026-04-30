@@ -44,7 +44,6 @@ export type View =
   | 'finance' 
   | 'receivables'
   | 'payables'
-  | 'imported-invoices'
   | 'settings' 
   | 'support';
 

@@ -415,12 +415,8 @@ export default function Payables({
   };
 
   const filteredPayables = payables.filter(tx => {
-    const description = tx?.description?.toLowerCase() || '';
-    const entity = tx?.entity?.toLowerCase() || '';
-    const search = searchTerm.toLowerCase();
-
-    const matchesSearch = description.includes(search) || 
-                         entity.includes(search);
+    const matchesSearch = tx.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         tx.entity.toLowerCase().includes(searchTerm.toLowerCase());
     const effectiveStatus = getEffectiveStatus(tx);
     const matchesStatus = statusFilter === 'Todos' || effectiveStatus === statusFilter;
     return matchesSearch && matchesStatus;
