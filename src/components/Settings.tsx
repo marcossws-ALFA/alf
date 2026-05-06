@@ -744,6 +744,98 @@ export default function Settings({ mechanics, setMechanics, sellers, setSellers,
                 {isMaintenanceLoading ? 'Processando...' : 'Limpar Serviços/Fornecedores'}
               </button>
             </div>
+            {/* Imported XMLs Reset */}
+            <div className="p-6 bg-red-50/50 rounded-3xl border border-red-100 space-y-4">
+              <div>
+                <h4 className="font-black text-red-900">Notas Fiscais Importadas</h4>
+                <p className="text-xs text-red-700/60 font-bold uppercase tracking-wider">Metadados de Importação XML</p>
+              </div>
+              <p className="text-sm text-red-800/80">Apaga apenas o histórico de importações de notas. (As peças e contas geradas permanecerão).</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('ATENÇÃO: Deseja apagar TODO o histórico de notas importadas?')) {
+                    setIsMaintenanceLoading(true);
+                    try {
+                      await Promise.all(data.importedInvoices.map(inv => actions.remove('imported_invoices', inv.id)));
+                      alert('Histórico de notas limpo!');
+                    } catch (e) {
+                      alert('Erro ao limpar histórico de notas.');
+                    } finally {
+                      setIsMaintenanceLoading(false);
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-3 bg-red-600 text-white rounded-xl font-bold text-xs hover:bg-red-700 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando...' : 'Limpar Histórico XML'}
+              </button>
+            </div>
+
+            {/* General Reset */}
+            <div className="p-6 bg-red-600 rounded-3xl shadow-xl shadow-red-600/20 md:col-span-2 space-y-4">
+              <div className="flex items-center gap-3 text-white">
+                <Trash2 size={24} />
+                <div>
+                  <h4 className="font-black">LIMPEZA GERAL</h4>
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Reset do Sistema</p>
+                </div>
+              </div>
+              <p className="text-sm text-white/80">Apaga Peças, Fornecedores, Financeiro e Notas Importadas de uma vez só.</p>
+              <button 
+                disabled={isMaintenanceLoading}
+                onClick={async () => {
+                  if (confirm('CUIDADO: Você está prestes a apagar TODOS os dados de Peças, Fornecedores, Financeiro e Notas Importadas. Deseja prosseguir?')) {
+                    if (confirm('CONFIRMAÇÃO FINAL: Esta ação removerá centenas de registros e NÃO pode ser desfeita. Confirmar?')) {
+                      setIsMaintenanceLoading(true);
+                      try {
+                        console.log('Iniciando limpeza geral...');
+                        
+                        // Preparar promessas com garantias de array
+                        const partsPromises = (data.parts || []).map(p => actions.remove('parts', p.id));
+                        const suppliersPromises = (data.suppliers || []).map(s => actions.remove('suppliers', s.id));
+                        const transactionsPromises = (data.transactions || []).map(t => actions.remove('transactions', t.id));
+                        const fixedExpensesPromises = (data.fixedExpenses || []).map(f => actions.remove('fixed_expenses', f.id));
+                        const importedInvoicesPromises = (data.importedInvoices || []).map(inv => actions.remove('imported_invoices', inv.id));
+                        
+                        const allPromises = [
+                          ...partsPromises,
+                          ...suppliersPromises,
+                          ...transactionsPromises,
+                          ...fixedExpensesPromises,
+                          ...importedInvoicesPromises
+                        ];
+
+                        if (allPromises.length === 0) {
+                          alert('Não há dados para limpar nestas categorias.');
+                          setIsMaintenanceLoading(false);
+                          return;
+                        }
+
+                        console.log(`Limpando ${allPromises.length} registros...`);
+                        await Promise.all(allPromises);
+                        
+                        alert('Limpeza geral concluída com sucesso!');
+                      } catch (error: any) {
+                        console.error('Erro na limpeza geral:', error);
+                        alert(`Erro ao realizar limpeza geral: ${error.message || 'Erro desconhecido'}`);
+                      } finally {
+                        setIsMaintenanceLoading(false);
+                      }
+                    }
+                  }
+                }}
+                className={cn(
+                  "w-full py-4 bg-white text-red-600 rounded-xl font-black text-sm hover:bg-white/90 transition-all",
+                  isMaintenanceLoading && "opacity-50 cursor-not-allowed"
+                )}
+              >
+                {isMaintenanceLoading ? 'Processando Limpeza...' : 'EXECUTAR LIMPEZA GERAL'}
+              </button>
+            </div>
           </div>
         </section>
       ) : (

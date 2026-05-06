@@ -21,6 +21,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { Supplier, Transaction } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
+import SupplierFormModal from './SupplierFormModal';
+import XMLImportPayableModal from './XMLImportPayableModal';
 
 interface SuppliersProps {
   suppliers: Supplier[];
