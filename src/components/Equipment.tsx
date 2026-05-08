@@ -167,7 +167,7 @@ export default function EquipmentView({ equipmentList, setEquipmentList, clients
     setShowClientsInDownload(false);
   };
 
-  const uniqueOwners = Array.from(new Set(equipmentList.map(eq => eq.owner))).sort();
+  const uniqueOwners = Array.from(new Set(equipmentList.map(eq => eq.owner || 'Sem Proprietário'))).sort();
 
   const openModal = (equipment: EquipmentType | null = null) => {
     setEditingEquipment(equipment);
@@ -214,12 +214,19 @@ export default function EquipmentView({ equipmentList, setEquipmentList, clients
   };
 
   const filteredEquipment = equipmentList.filter(eq => {
+    const brand = eq.brand || '';
+    const model = eq.model || '';
+    const owner = eq.owner || '';
+    const type = eq.type || '';
+    const serial = eq.serialNumber || '';
+    const search = searchTerm.toLowerCase();
+
     const matchesSearch = 
-      eq.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      eq.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (eq.serialNumber && eq.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()));
+      brand.toLowerCase().includes(search) ||
+      model.toLowerCase().includes(search) ||
+      owner.toLowerCase().includes(search) ||
+      type.toLowerCase().includes(search) ||
+      serial.toLowerCase().includes(search);
     
     const matchesStatus = statusFilter === 'Todos' || eq.status === statusFilter;
     
@@ -413,13 +420,13 @@ export default function EquipmentView({ equipmentList, setEquipmentList, clients
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-[#e0e0ff]/30 flex items-center justify-center text-[#000666]">
-                        {eq.type.toLowerCase().includes('trator') && <Forklift size={18} />}
-                        {eq.type.toLowerCase().includes('gerador') && <Zap size={18} />}
-                        {eq.type.toLowerCase().includes('lavadora') && <Settings size={18} />}
-                        {eq.type.toLowerCase().includes('motosserra') && <Cpu size={18} />}
-                        {!['trator', 'gerador', 'lavadora', 'motosserra'].some(k => eq.type.toLowerCase().includes(k)) && <Settings size={18} />}
+                        {eq.type?.toLowerCase().includes('trator') && <Forklift size={18} />}
+                        {eq.type?.toLowerCase().includes('gerador') && <Zap size={18} />}
+                        {eq.type?.toLowerCase().includes('lavadora') && <Settings size={18} />}
+                        {eq.type?.toLowerCase().includes('motosserra') && <Cpu size={18} />}
+                        {(!eq.type || !['trator', 'gerador', 'lavadora', 'motosserra'].some(k => eq.type.toLowerCase().includes(k))) && <Settings size={18} />}
                       </div>
-                      <span className="text-sm font-medium text-[#1b1b21]">{eq.type}</span>
+                      <span className="text-sm font-medium text-[#1b1b21]">{eq.type || 'N/A'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-500 font-medium">{eq.brand}</td>

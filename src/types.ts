@@ -281,14 +281,3 @@ export interface PDVOrder {
   sellerName?: string;
   status: 'Finalizado' | 'Orçamento';
 }
-
-export interface ImportedInvoice {
-  id: string;
-  invoiceNumber: string;
-  issuerName: string;
-  issuerDocument: string;
-  date: string;
-  totalValue: number;
-  itemsCount: number;
-  importedAt: string;
-}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   Plus, 
   Search, 
@@ -77,7 +77,6 @@ interface PartsProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   suppliers: Supplier[];
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
-  onUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
 export default function Parts({ 
@@ -86,8 +85,7 @@ export default function Parts({
   transactions, 
   setTransactions, 
   suppliers, 
-  setSuppliers,
-  onUnsavedChanges
+  setSuppliers 
 }: PartsProps) {
   const { actions } = useFirebase();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -119,26 +117,6 @@ export default function Parts({
     location: ''
   });
 
-  // Track if there are unsaved changes
-  useEffect(() => {
-    if (onUnsavedChanges) {
-      const isModalDirty = (isModalOpen && formData.name !== '' && !editingPart) || 
-                          (isModalOpen && editingPart && (
-                            formData.name !== (editingPart.name || '') ||
-                            formData.price !== (editingPart.price || 0) ||
-                            formData.stock !== (editingPart.stock || 0) ||
-                            formData.code !== (editingPart.code || '')
-                          ));
-      
-      const isImportDirty = isImportModalOpen || isXMLModalOpen;
-      
-      onUnsavedChanges(!!(isModalDirty || isImportDirty));
-    }
-    return () => {
-      if (onUnsavedChanges) onUnsavedChanges(false);
-    };
-  }, [isModalOpen, formData, editingPart, isImportModalOpen, isXMLModalOpen, onUnsavedChanges]);
-
   const filteredParts = (() => {
     // 1. Remover duplicados por Código SKU
     const uniqueList = parts.filter((item, index, self) => {
@@ -151,9 +129,9 @@ export default function Parts({
 
     // 2. Filtrar por busca
     return uniqueList.filter(p => 
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.additionalCodes?.some(c => c.toLowerCase().includes(searchTerm.toLowerCase()))
+      (p.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (p.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.additionalCodes?.some(c => (c || '').toLowerCase().includes(searchTerm.toLowerCase()))
     );
   })();
 
@@ -384,14 +362,16 @@ export default function Parts({
     e.target.value = '';
   };
 
-  const handleConfirmXMLImport = async (data: any) => {
+  const handleConfirmXMLImport = (data: any) => {
     const cnpj = data.supplier.cnpj.replace(/\D/g, '');
-    const existingSupplier = suppliers.find(s => s.document.replace(/\D/g, '') === cnpj);
+    const existingSupplierIndex = suppliers.findIndex(s => s.document.replace(/\D/g, '') === cnpj);
     
     let supplierName = data.supplier.name;
 
-    try {
-      const supplierData = {
+    if (existingSupplierIndex !== -1) {
+      const updatedSuppliers = [...suppliers];
+      updatedSuppliers[existingSupplierIndex] = {
+        ...updatedSuppliers[existingSupplierIndex],
         name: data.supplier.name,
         email: data.supplier.email,
         phone: data.supplier.phone,
@@ -401,137 +381,87 @@ export default function Parts({
         city: data.supplier.address.city,
         state: data.supplier.address.state,
         zipCode: data.supplier.address.zip,
-        updatedAt: new Date().toISOString()
       };
-
-      if (existingSupplier && existingSupplier.id && existingSupplier.id.length > 5) {
-        try {
-          console.log(`Atualizando fornecedor: ${existingSupplier.name}`);
-          await actions.update('suppliers', existingSupplier.id, supplierData);
-        } catch (error: any) {
-          if (error.message?.includes('not-found') || error.code === 'not-found') {
-            console.warn(`Fornecedor ${existingSupplier.id} não encontrado. Criando novo.`);
-            await actions.add('suppliers', {
-              ...supplierData,
-              document: data.supplier.cnpj,
-              category: 'Fornecedores',
-              status: 'Ativo',
-              createdAt: new Date().toLocaleDateString('pt-BR')
-            });
-          } else {
-            throw error;
-          }
-        }
-      } else {
-        const newSupplier = {
-          ...supplierData,
-          document: data.supplier.cnpj,
-          category: 'Fornecedores',
-          status: 'Ativo',
-          createdAt: new Date().toLocaleDateString('pt-BR')
-        };
-        await actions.add('suppliers', newSupplier);
-      }
-
-      for (const inst of data.installments) {
-        await actions.add('transactions', {
-          description: `NF ${data.invoiceNumber} - Parcela ${inst.number} (Peças)`,
-          entity: supplierName,
-          value: inst.value,
-          date: new Date().toLocaleDateString('pt-BR'),
-          dueDate: inst.dueDate,
-          category: 'Fornecedores',
-          type: 'Despesa',
-          status: inst.status || 'Pendente',
-          notes: `Importado via XML da NF ${data.invoiceNumber} no catálogo de peças`
-        });
-      }
-
-      // Add to imported_invoices collection
-      await actions.add('imported_invoices', {
-        invoiceNumber: data.invoiceNumber,
-        issuerName: data.supplier.name,
-        issuerDocument: data.supplier.cnpj,
-        date: data.emissionDate,
-        totalValue: data.totalValue,
-        itemsCount: pendingImportParts.length,
-        importedAt: new Date().toISOString()
-      });
-
-      setIsXMLModalOpen(false);
-      setXmlImportData(null);
-      alert('Importação financeira e atualização de fornecedor concluídas!');
-    } catch (error) {
-      console.error('Erro ao importar financeiro do XML:', error);
-      alert('Erro ao persistir dados financeiros do XML.');
+      setSuppliers(updatedSuppliers);
+    } else {
+      const newSupplier: Supplier = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: data.supplier.name,
+        document: data.supplier.cnpj,
+        email: data.supplier.email,
+        phone: data.supplier.phone,
+        category: 'Fornecedores',
+        status: 'Ativo',
+        createdAt: new Date().toLocaleDateString('pt-BR'),
+        street: data.supplier.address.street,
+        number: data.supplier.address.number,
+        neighborhood: data.supplier.address.neighborhood,
+        city: data.supplier.address.city,
+        state: data.supplier.address.state,
+        zipCode: data.supplier.address.zip,
+      };
+      setSuppliers(prev => [newSupplier, ...prev]);
     }
+
+    const newTransactions: Transaction[] = data.installments.map((inst: any) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      description: `NF ${data.invoiceNumber} - Parcela ${inst.number} (Peças)`,
+      entity: supplierName,
+      value: inst.value,
+      date: new Date().toLocaleDateString('pt-BR'),
+      dueDate: inst.dueDate,
+      category: 'Fornecedores',
+      type: 'Despesa',
+      status: inst.status || 'Pendente',
+      notes: `Importado via XML da NF ${data.invoiceNumber} no catálogo de peças`
+    }));
+
+    setTransactions(prev => [...newTransactions, ...prev]);
+    setIsXMLModalOpen(false);
+    setXmlImportData(null);
+    alert('Importação financeira e atualização de fornecedor concluídas!');
   };
 
-  const confirmImport = async () => {
+  const confirmImport = () => {
     const toImport = pendingImportParts.filter(p => selectedImportIds.has(p.id));
-    const processedCodes = new Set<string>();
     
-    try {
-      for (const newPart of toImport) {
-        const partCode = newPart.code?.trim().toUpperCase();
-        if (!partCode || processedCodes.has(partCode)) continue;
-        processedCodes.add(partCode);
+    setParts(prev => {
+      let updated = [...prev];
+      toImport.forEach(newPart => {
+        const existingIndex = updated.findIndex(p => 
+          p.code === newPart.code || 
+          p.additionalCodes?.includes(newPart.code)
+        );
 
-        // Buscar peça existente
-        const existingPart = parts.find(p => {
-          const pCode = p.code?.trim().toUpperCase();
-          const pAddCodes = (p.additionalCodes || []).map(c => c.trim().toUpperCase());
-          return pCode === partCode || pAddCodes.includes(partCode);
-        });
+        if (existingIndex !== -1) {
+          const existing = updated[existingIndex];
+          const mergedAdditional = Array.from(new Set([
+            ...(existing.additionalCodes || []),
+            ...(newPart.additionalCodes || [])
+          ])).filter(c => c !== existing.code);
 
-        if (existingPart && existingPart.id && existingPart.id.length > 5) {
-          try {
-            const mergedAdditional = Array.from(new Set([
-              ...(existingPart.additionalCodes || []),
-              ...(newPart.additionalCodes || [])
-            ])).filter(c => c !== existingPart.code);
-
-            console.log(`Atualizando peça: ${existingPart.name} (${existingPart.id})`);
-            await actions.update('parts', existingPart.id, {
-              costPrice: newPart.costPrice,
-              price: newPart.price,
-              stock: (existingPart.stock || 0) + newPart.stock,
-              additionalCodes: mergedAdditional,
-              updatedAt: new Date().toISOString()
-            });
-          } catch (error: any) {
-            if (error.message?.includes('not-found') || error.code === 'not-found') {
-              console.warn(`Peça ${existingPart.id} não encontrada. Criando nova.`);
-              const { id, ...partData } = newPart;
-              await actions.add('parts', {
-                ...partData,
-                createdAt: new Date().toISOString()
-              });
-            } else {
-              throw error;
-            }
-          }
+          updated[existingIndex] = {
+            ...existing,
+            costPrice: newPart.costPrice,
+            price: newPart.price,
+            stock: existing.stock + newPart.stock,
+            additionalCodes: mergedAdditional
+          };
         } else {
-          console.log(`Adicionando nova peça: ${newPart.name}`);
-          const { id, ...partData } = newPart;
-          await actions.add('parts', {
-            ...partData,
-            createdAt: new Date().toISOString()
-          });
+          updated.push(newPart);
         }
-      }
+      });
+      return updated;
+    });
 
-      setIsImportModalOpen(false);
-      setPendingImportParts([]);
-      
-      if (xmlImportData) {
-        setIsXMLModalOpen(true);
-      } else {
-        alert('Importação de peças concluída!');
-      }
-    } catch (error) {
-      console.error('Erro ao importar peças:', error);
-      alert('Erro ao salvar as peças no banco de dados. Verifique o console.');
+    setIsImportModalOpen(false);
+    setPendingImportParts([]);
+    
+    // After parts import, trigger financial review
+    if (xmlImportData) {
+      setIsXMLModalOpen(true);
+    } else {
+      alert('Importação de peças concluída!');
     }
   };
 
@@ -596,41 +526,41 @@ export default function Parts({
       </div>
 
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: 'Total de Itens', value: parts.length, icon: Package, color: 'text-[#000666] bg-[#000666]/10' },
           { label: 'Estoque Baixo', value: parts.filter(p => p.stock <= p.minStock).length, icon: AlertTriangle, color: 'text-[#ba1a1a] bg-[#ba1a1a]/10' },
           { label: 'Valor Total', value: `R$ ${parts.reduce((acc, p) => acc + (p.price * p.stock), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: TrendingUp, color: 'text-[#217128] bg-[#a0f399]/30' },
           { label: 'Categorias', value: new Set(parts.map(p => p.category)).size, icon: Tag, color: 'text-[#1b6d24] bg-[#1b6d24]/10' },
         ].map((metric, i) => (
-          <div key={i} className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-transparent hover:border-[#c6c5d4]/15 transition-all">
-            <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2 text-slate-500">
-              <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center", metric.color)}>
-                <metric.icon size={18} className="sm:w-5 sm:h-5" />
+          <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-transparent hover:border-[#c6c5d4]/15 transition-all">
+            <div className="flex items-center gap-3 mb-2">
+              <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", metric.color)}>
+                <metric.icon size={20} />
               </div>
-              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider">{metric.label}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{metric.label}</span>
             </div>
-            <p className="text-xl sm:text-2xl font-black text-[#1b1b21]">{metric.value}</p>
+            <p className="text-2xl font-black text-[#1b1b21]">{metric.value}</p>
           </div>
         ))}
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col md:flex-row gap-3 sm:gap-4 items-center justify-between">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
             placeholder="Buscar por nome ou código..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-white border border-[#c6c5d4]/20 rounded-2xl text-sm focus:ring-2 focus:ring-[#000666]/10 outline-none transition-all shadow-sm"
+            className="w-full pl-10 pr-4 py-2 bg-white border border-[#c6c5d4]/20 rounded-xl text-sm focus:ring-2 focus:ring-[#000666]/10 outline-none transition-all"
           />
         </div>
-        <div className="flex gap-2 w-full md:w-64">
-          <div className="flex items-center bg-white rounded-2xl px-4 py-3 border border-[#c6c5d4]/20 flex-1 shadow-sm">
+        <div className="flex gap-2 w-full md:w-auto">
+          <div className="flex items-center bg-white rounded-xl px-3 py-2 border border-[#c6c5d4]/20 flex-1 md:w-64">
             <Filter className="text-slate-400 mr-2" size={18} />
-            <select className="bg-transparent border-none text-xs w-full text-[#1b1b21] font-bold outline-none cursor-pointer">
+            <select className="bg-transparent border-none focus:ring-0 text-xs w-full text-[#1b1b21] font-semibold outline-none">
               <option>Todas as Categorias</option>
               <option>Mecânica</option>
               <option>Elétrica</option>
@@ -640,10 +570,9 @@ export default function Parts({
         </div>
       </div>
 
-      {/* Table / Cards */}
+      {/* Table */}
       <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#c6c5d4]/10">
-        {/* Desktop View */}
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f5f2fb]">
@@ -659,7 +588,7 @@ export default function Parts({
                 <tr key={part.id} className="hover:bg-[#f5f2fb]/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#efecf5] overflow-hidden flex items-center justify-center relative shadow-sm border border-white">
+                      <div className="w-10 h-10 rounded-lg bg-[#efecf5] overflow-hidden flex items-center justify-center relative">
                         {part.image ? (
                           <Image 
                             src={part.image} 
@@ -721,78 +650,16 @@ export default function Parts({
                   </td>
                 </tr>
               ))}
-              {filteredParts.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 font-bold">Nenhum item encontrado.</td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
-
-        {/* Mobile View */}
-        <div className="lg:hidden p-4 space-y-4 divide-y divide-slate-100 bg-white">
-          {filteredParts.map((part) => (
-            <div key={part.id} className="pt-4 first:pt-0 pb-4 last:pb-0 flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-[#f5f2fb] overflow-hidden flex items-center justify-center shrink-0 shadow-sm border border-white relative">
-                  {part.image ? (
-                    <Image src={part.image} alt={part.name} fill className="object-cover" referrerPolicy="no-referrer" />
-                  ) : (
-                    <Package size={24} className="text-[#8690ee]" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-black text-[#1b1b21] leading-tight mb-1 truncate">{part.name}</p>
-                  <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">{part.code}</span>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="px-2 py-0.5 bg-[#eae7ef] text-[#000666] text-[9px] font-black uppercase rounded-md">{part.category}</span>
-                    {part.stock <= part.minStock && (
-                      <span className="px-2 py-0.5 bg-[#ffdad6] text-[#ba1a1a] text-[9px] font-black uppercase rounded-md">Estoque Baixo</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-1">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Preço Sugerido</span>
-                  <span className="text-lg font-black text-[#000666]">R$ {part.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estoque</span>
-                  <span className={cn("text-base font-black", part.stock <= part.minStock ? "text-red-500" : "text-[#1b1b21]")}>{part.stock} un</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button 
-                  onClick={() => handleOpenModal(part)}
-                  className="flex-1 py-3 bg-[#f5f2fb] text-[#000666] rounded-xl font-bold text-xs hover:bg-[#e0e0ff] transition-all flex items-center justify-center gap-2"
-                >
-                  <Edit2 size={14} /> Editar
-                </button>
-                <button 
-                  onClick={() => handleDelete(part.id)}
-                  className="px-4 py-3 bg-red-50 text-red-500 rounded-xl font-bold text-xs hover:bg-red-100 transition-all flex items-center justify-center"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
-          {filteredParts.length === 0 && (
-            <div className="py-12 text-center text-slate-400 font-bold">Nenhum item disponível.</div>
-          )}
-        </div>
-
         <div className="px-6 py-4 flex items-center justify-between bg-white border-t border-[#c6c5d4]/10">
-          <span className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase tracking-widest">Total: {filteredParts.length}</span>
+          <span className="text-xs text-slate-500 font-medium">Exibindo {filteredParts.length} de {parts.length} peças</span>
           <div className="flex gap-2">
-            <button className="p-2 rounded-xl bg-[#f5f2fb] text-[#1b1b21] disabled:opacity-50 hover:bg-slate-200 transition-all">
+            <button className="p-2 rounded-lg bg-[#f5f2fb] text-[#1b1b21] disabled:opacity-50">
               <ChevronLeft size={18} />
             </button>
-            <button className="p-2 rounded-xl bg-[#f5f2fb] text-[#1b1b21] hover:bg-slate-200 transition-all">
+            <button className="p-2 rounded-lg bg-[#f5f2fb] text-[#1b1b21]">
               <ChevronRight size={18} />
             </button>
           </div>

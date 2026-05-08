@@ -346,9 +346,7 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
         client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (client.document && client.document.includes(searchTerm)) ||
         (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (client.phone && client.phone.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, ''))) ||
-        (client.mobile && client.mobile.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')));
+        (client.tradeName && client.tradeName.toLowerCase().includes(searchTerm.toLowerCase()));
       
       return matchesStatus && matchesSearch;
     });
@@ -815,11 +813,11 @@ export default function Clients({ equipmentList, clients, setClients, orders, on
                         >
                           <div className="flex items-center gap-4 text-left">
                             <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000666] group-hover/eq:bg-[#000666] group-hover/eq:text-white transition-colors">
-                              {eq.type.toLowerCase().includes('trator') && <Forklift size={24} />}
-                              {eq.type.toLowerCase().includes('gerador') && <Zap size={24} />}
-                              {eq.type.toLowerCase().includes('lavadora') && <Settings size={24} />}
-                              {eq.type.toLowerCase().includes('motosserra') && <Cpu size={24} />}
-                              {!['trator', 'gerador', 'lavadora', 'motosserra'].some(k => eq.type.toLowerCase().includes(k)) && <Settings size={24} />}
+                              {eq.type?.toLowerCase().includes('trator') && <Forklift size={24} />}
+                              {eq.type?.toLowerCase().includes('gerador') && <Zap size={24} />}
+                              {eq.type?.toLowerCase().includes('lavadora') && <Settings size={24} />}
+                              {eq.type?.toLowerCase().includes('motosserra') && <Cpu size={24} />}
+                              {(!eq.type || !['trator', 'gerador', 'lavadora', 'motosserra'].some(k => eq.type.toLowerCase().includes(k))) && <Settings size={24} />}
                             </div>
                             <div>
                               <p className="text-sm font-bold text-[#1b1b21]">{eq.type}</p>

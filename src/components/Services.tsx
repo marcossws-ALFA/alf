@@ -79,8 +79,8 @@ export default function Services({ services, setServices }: ServicesProps) {
   });
 
   const filteredServices = services.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.code.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (s.code || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleOpenModal = (service?: Service) => {

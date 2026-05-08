@@ -37,15 +37,6 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ orders, transactions, pdvOrders }: DashboardProps) {
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsMounted(true);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
   const recentOrders = React.useMemo(() => {
     return [...orders].sort((a, b) => {
       try {
@@ -188,16 +179,16 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
       {/* Global Search Section */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-[#c6c5d4]/15 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 sm:w-64 sm:h-64 bg-[#f5f2fb] rounded-full -mr-24 -mt-24 sm:-mr-32 sm:-mt-32 opacity-50"></div>
-        <div className="relative z-10 max-w-2xl mx-auto text-center space-y-3 sm:space-y-6">
-          <h3 className="text-lg sm:text-2xl font-black text-[#1b1b21]">O que você está procurando?</h3>
-          <p className="text-slate-500 text-[10px] sm:text-sm">Pesquise clientes, ordens, equipamentos ou peças.</p>
+        <div className="relative z-10 max-w-2xl mx-auto text-center space-y-4 sm:space-y-6">
+          <h3 className="text-xl sm:text-2xl font-black text-[#1b1b21]">O que você está procurando hoje?</h3>
+          <p className="text-slate-500 text-xs sm:text-sm">Pesquise por clientes, ordens de serviço, equipamentos ou peças em todo o sistema.</p>
           
           <div className="relative group">
             <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-[#000666] group-focus-within:scale-110 transition-transform sm:w-6 sm:h-6 w-5 h-5" />
             <input 
               type="text" 
-              placeholder="Pesquisar..." 
-              className="w-full pl-11 sm:pl-14 pr-6 py-3 sm:py-5 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-sm sm:text-lg font-medium focus:bg-white focus:border-[#000666]/10 focus:ring-4 focus:ring-[#000666]/5 transition-all outline-none shadow-inner"
+              placeholder="Digite sua busca aqui..." 
+              className="w-full pl-12 sm:pl-14 pr-6 py-4 sm:py-5 bg-[#f5f2fb] border-2 border-transparent rounded-2xl text-base sm:text-lg font-medium focus:bg-white focus:border-[#000666]/10 focus:ring-4 focus:ring-[#000666]/5 transition-all outline-none shadow-inner"
             />
           </div>
         </div>
@@ -252,29 +243,27 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
             </div>
           </div>
           
-          <div className="h-64 w-full relative">
-            {isMounted && (
-              <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0} debounce={50}>
-                <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
-                    dy={10}
-                  />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
-                  <Tooltip 
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
-                  />
-                  <Bar dataKey="previous" fill="#bdc2ff" radius={[4, 4, 0, 0]} barSize={30} />
-                  <Bar dataKey="current" fill="#000666" radius={[4, 4, 0, 0]} barSize={30} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <BarChart data={monthlyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }}
+                  dy={10}
+                />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                <Tooltip 
+                  cursor={{ fill: '#f8fafc' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
+                />
+                <Bar dataKey="previous" fill="#bdc2ff" radius={[4, 4, 0, 0]} barSize={30} />
+                <Bar dataKey="current" fill="#000666" radius={[4, 4, 0, 0]} barSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
@@ -282,29 +271,27 @@ export default function Dashboard({ orders, transactions, pdvOrders }: Dashboard
           <h4 className="text-lg font-bold text-[#1b1b21] mb-1">Mix de Receita</h4>
           <p className="text-xs text-slate-500 mb-6">Distribuição entre Peças e Serviços</p>
           
-          <div className="h-[250px] relative w-full overflow-hidden">
-            {isMounted && (
-              <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0} debounce={50}>
-                <PieChart>
-                  <Pie
-                    data={distributionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {distributionData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+          <div className="flex-1 min-h-[200px] relative">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <PieChart>
+                <Pie
+                  data={distributionData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {distributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: number) => `R$ ${value.toLocaleString('pt-BR')}`}
+                />
+              </PieChart>
+            </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</span>
               <span className="text-lg font-black text-[#000666]">

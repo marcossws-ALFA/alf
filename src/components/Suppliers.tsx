@@ -21,33 +21,23 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
 import { Supplier, Transaction } from '@/src/types';
 import { useFirebase } from '@/src/context/FirebaseContext';
-import SupplierFormModal from './SupplierFormModal';
-import XMLImportPayableModal from './XMLImportPayableModal';
 
 interface SuppliersProps {
   suppliers: Supplier[];
   setSuppliers: React.Dispatch<React.SetStateAction<Supplier[]>>;
   transactions: Transaction[];
-  onUnsavedChanges?: (hasChanges: boolean) => void;
 }
 
-export default function Suppliers({ suppliers, setSuppliers, transactions, onUnsavedChanges }: SuppliersProps) {
+import SupplierFormModal from './SupplierFormModal';
+import XMLImportPayableModal from './XMLImportPayableModal';
+
+export default function Suppliers({ suppliers, setSuppliers, transactions }: SuppliersProps) {
   const { actions } = useFirebase();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isXMLModalOpen, setIsXMLModalOpen] = useState(false);
   const [xmlImportData, setXmlImportData] = useState<any>(null);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-
-  // Track if there are unsaved imports
-  React.useEffect(() => {
-    if (onUnsavedChanges) {
-      onUnsavedChanges(isXMLModalOpen || isModalOpen);
-    }
-    return () => {
-      if (onUnsavedChanges) onUnsavedChanges(false);
-    };
-  }, [isXMLModalOpen, isModalOpen, onUnsavedChanges]);
 
   const filteredSuppliers = suppliers.filter(s => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -163,12 +153,14 @@ export default function Suppliers({ suppliers, setSuppliers, transactions, onUns
     e.target.value = '';
   };
 
-  const handleConfirmXMLImport = async (data: any) => {
+  const handleConfirmXMLImport = (data: any) => {
     const cnpj = data.supplier.cnpj.replace(/\D/g, '');
-    const existingSupplier = suppliers.find(s => s.document.replace(/\D/g, '') === cnpj);
+    const existingSupplierIndex = suppliers.findIndex(s => s.document.replace(/\D/g, '') === cnpj);
     
-    try {
-      const supplierData = {
+    if (existingSupplierIndex !== -1) {
+      const updatedSuppliers = [...suppliers];
+      updatedSuppliers[existingSupplierIndex] = {
+        ...updatedSuppliers[existingSupplierIndex],
         name: data.supplier.name,
         email: data.supplier.email,
         phone: data.supplier.phone,
@@ -178,54 +170,30 @@ export default function Suppliers({ suppliers, setSuppliers, transactions, onUns
         city: data.supplier.address.city,
         state: data.supplier.address.state,
         zipCode: data.supplier.address.zip,
-        updatedAt: new Date().toISOString()
       };
-
-      if (existingSupplier && existingSupplier.id && existingSupplier.id.length > 5) {
-        try {
-          console.log(`Atualizando fornecedor: ${existingSupplier.name}`);
-          await actions.update('suppliers', existingSupplier.id, supplierData);
-        } catch (error: any) {
-          if (error.message?.includes('not-found') || error.code === 'not-found') {
-            await actions.add('suppliers', {
-              ...supplierData,
-              document: data.supplier.cnpj,
-              category: 'Fornecedores',
-              status: 'Ativo',
-              createdAt: new Date().toLocaleDateString('pt-BR')
-            });
-          } else {
-            throw error;
-          }
-        }
-      } else {
-        await actions.add('suppliers', {
-          ...supplierData,
-          document: data.supplier.cnpj,
-          category: 'Fornecedores',
-          status: 'Ativo',
-          createdAt: new Date().toLocaleDateString('pt-BR')
-        });
-      }
-
-      // Add to imported_invoices collection
-      await actions.add('imported_invoices', {
-        invoiceNumber: data.invoiceNumber,
-        issuerName: data.supplier.name,
-        issuerDocument: data.supplier.cnpj,
-        date: data.emissionDate,
-        totalValue: data.totalValue,
-        itemsCount: 0,
-        importedAt: new Date().toISOString()
-      });
-
-      setIsXMLModalOpen(false);
-      setXmlImportData(null);
-      alert('Fornecedor importado/atualizado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao importar fornecedor do XML:', error);
-      alert('Erro ao persistir fornecedor.');
+      setSuppliers(updatedSuppliers);
+    } else {
+      const newSupplier: Supplier = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: data.supplier.name,
+        document: data.supplier.cnpj,
+        email: data.supplier.email,
+        phone: data.supplier.phone,
+        category: 'Fornecedores',
+        status: 'Ativo',
+        createdAt: new Date().toLocaleDateString('pt-BR'),
+        street: data.supplier.address.street,
+        number: data.supplier.address.number,
+        neighborhood: data.supplier.address.neighborhood,
+        city: data.supplier.address.city,
+        state: data.supplier.address.state,
+        zipCode: data.supplier.address.zip,
+      };
+      setSuppliers(prev => [newSupplier, ...prev]);
     }
+
+    setIsXMLModalOpen(false);
+    setXmlImportData(null);
   };
 
   return (
